@@ -82,6 +82,7 @@ img{max-width:100%}
 .btn.danger{background:#C8705F;border-color:#8E4536;box-shadow:0 3px 0 #8E4536}
 .btn.small{min-height:40px;padding:4px 14px;font-size:.95rem}
 .btn[disabled]{opacity:.45;pointer-events:none}
+.btn.tales-entry{background:linear-gradient(180deg,#5A4C9A,#2E2A5C);color:#FFE7AE;border-color:#1E1A3C;box-shadow:0 3px 0 #1E1A3C,0 0 18px rgba(246,200,106,.35)}
 .panel{background:var(--panel);border:2px solid var(--panel-edge);border-radius:var(--r-blob);box-shadow:var(--shadow)}
 
 /* ============ intro ============ */
@@ -484,6 +485,7 @@ input[type=range]{width:100%;accent-color:var(--accent)}
 .moods button{width:auto;height:auto;min-width:62px;padding:6px 6px 4px;display:grid;justify-items:center;gap:2px}
 .moods small{font-size:.72rem}
 </style>
+<link rel="stylesheet" href="stories/tales.css">
 </head>
 <body class="paper-tex">
 <div id="app">
@@ -500,6 +502,12 @@ input[type=range]{width:100%;accent-color:var(--accent)}
 </div>
 <input type="file" id="importFile" accept="application/json,.json" hidden>
 
+<!-- حكاياتنا: عالم القصص (ملفات مستقلة بمجلد stories) -->
+<script src="stories/tales-art.js"></script>
+<script src="stories/tales-audio.js"></script>
+<script src="stories/tales-puzzles.js"></script>
+<script src="stories/season1.js"></script>
+<script src="stories/tales-engine.js"></script>
 <script>
 /* =====================================================================
    إعدادات الموقع — غيّر هنا الاسم والرسائل والألوان وترتيب الألعاب.
@@ -599,6 +607,7 @@ document.documentElement.style.setProperty("--forest", `url("${FOREST}")`);
 
 /* ============ icons ============ */
 const IC = {
+  book:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 5.5C6 4 9 4 12 6c3-2 6-2 9-.5V19c-3-1.5-6-1.5-9 .5-3-2-6-2-9-.5z"/><path d="M12 6v13.5"/></svg>',
   back:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5l7 7-7 7"/></svg>',
   star:'<svg viewBox="0 0 24 24"><path d="M12 2.8l2.7 5.6 6.1.8-4.4 4.3 1 6.1L12 16.8l-5.4 2.8 1-6.1-4.4-4.3 6.1-.8z" fill="#E8C066" stroke="#B88F33" stroke-width="1.4" stroke-linejoin="round"/></svg>',
   gift:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="9" width="17" height="11" rx="2"/><path d="M2.5 9h19M12 9v11M12 9c-2-4-6-4-6-1.5S10 9 12 9zm0 0c2-4 6-4 6-1.5S14 9 12 9z"/></svg>',
@@ -799,10 +808,10 @@ function go(route, push=true){
   current = route;
   if(push){ try{ history.pushState({route},"", "#"+route); }catch(e){} }
   const view = $("#view"); view.innerHTML="";
-  $("#topbar").hidden = route==="intro";
   const [kind,id] = route.split(":");
+  $("#topbar").hidden = route==="intro" || kind==="tales";
   $("#viewTitle").textContent = kind==="game" ? GAMES[id].title : (titles[kind]? titles[kind]() : settings.siteTitle);
-  const fn = {intro:viewIntro, map:viewMap, paint:viewPaint, diary:viewDiary, cave:viewCave, jokes:viewJokes, game:viewGame}[kind] || viewMap;
+  const fn = {intro:viewIntro, map:viewMap, paint:viewPaint, diary:viewDiary, cave:viewCave, jokes:viewJokes, game:viewGame, tales:viewTales}[kind] || viewMap;
   cleanup = fn(view, id) || null;
   view.focus && view.focus();
 }
@@ -830,7 +839,10 @@ function viewIntro(root){
     <div class="intro-card panel">
       <h1 class="intro-title">${esc(settings.siteTitle)}</h1>
       <p class="intro-sub">${esc(CONFIG.introSub)}</p>
-      <button class="btn honey" id="enterBtn" style="font-size:1.25rem;min-height:56px;padding:6px 30px">${esc(CONFIG.enterLabel)}</button>
+      <div class="row" style="justify-content:center;gap:10px;flex-wrap:wrap">
+        <button class="btn honey" id="enterBtn" style="font-size:1.25rem;min-height:56px;padding:6px 30px">${esc(CONFIG.enterLabel)}</button>
+        <button class="btn tales-entry" id="talesBtn" style="font-size:1.25rem;min-height:56px;padding:6px 26px">${IC.book||""}حكاياتنا</button>
+      </div>
     </div>
     <div class="intro-cast">
       <div style="position:relative">${girlImg("idle")}</div>
@@ -842,6 +854,7 @@ function viewIntro(root){
   setTimeout(()=>react(jm,"wave"), 700);
   jm.onclick = () => { react(jm,"hop"); Sound.soft(); };
   girl.onclick = () => { react(girl,"jump"); Sound.soft(); };
+  $("#talesBtn").onclick = () => { Sound.chime(); go("tales"); };
   $("#enterBtn").onclick = () => {
     Sound.chime();
     const fin = () => { go("map"); if(!Store.get("toured", false)) setTimeout(tour, 350); };
@@ -895,7 +908,7 @@ function viewMap(root){
       ${ambientLayer(6)}
     </div></div>
     <div class="map-hint panel" id="mapHint">${esc(CONFIG.mapHint)}</div>
-    <div class="map-ui"><button class="btn ghost" id="allPlaces">${IC.list} كل الأماكن</button><button class="btn honey" id="mapSurprise">${IC.gift} فاجئيني</button></div>
+    <div class="map-ui"><button class="btn ghost" id="allPlaces">${IC.list} كل الأماكن</button><button class="btn honey" id="mapSurprise">${IC.gift} فاجئيني</button><button class="btn tales-entry" id="mapTales">${IC.book||""} حكاياتنا</button></div>
   </section>`);
   root.appendChild(v);
   const scene=$(".mapscene",v), scroll=$(".mapscroll",v), path=$(".map-path path",v), tok=$("#heroTok",v), jt=$("#jmTok",v);
@@ -920,6 +933,7 @@ function viewMap(root){
     walkTo(k, ()=>{ if(p.go) p.go(); else signboard(k); });
   }
   $$("[data-place]",v).forEach(b=>b.onclick=()=>openPlace(b.dataset.place));
+  $("#mapTales",v).onclick = () => { Sound.soft(); go("tales"); };
   // secrets
   $$("[data-secret]",v).forEach(b=>b.onclick=()=>{
     const s = SECRETS.find(x=>x.id===b.dataset.secret); if(progress.secrets.includes(s.id)) return;
@@ -1892,7 +1906,7 @@ $("#motionBtn").onclick=()=>{ if(sysReduce.matches){ toast("الحركة مخف�
 fillIcons(); applyTheme(); prefs.sound=false; syncToggles(); renderStars(false);
 if(!Store.ok) setTimeout(()=>toast("المتصفح ما يسمح بالحفظ — التقدّم يضيع عند الإغلاق","bulb"), 1200);
 const start = location.hash.slice(1);
-const valid = r => ["intro","map","paint","diary","cave","jokes"].includes(r) || (r.startsWith("game:") && GAMES[r.split(":")[1]]);
+const valid = r => ["intro","map","paint","diary","cave","jokes"].includes(r) || r==="tales" || r.startsWith("tales:") || (r.startsWith("game:") && GAMES[r.split(":")[1]]);
 go(valid(start)?start:"intro", false);
 try{ history.replaceState({route:current},"","#"+current); }catch(e){}
 </script>

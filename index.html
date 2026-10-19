@@ -278,7 +278,7 @@ img.jm-think{transform:rotate(-4deg)}
 .pad{display:flex;justify-content:center;gap:10px;flex-wrap:wrap}
 .pad .btn{min-width:88px}
 .bub-stage{height:clamp(300px,54vh,640px)}
-.bub{position:absolute;width:var(--s);height:var(--s);border-radius:50%;border:0;padding:0;background:radial-gradient(circle at 32% 28%,rgba(255,255,255,.95) 0 10%,rgba(255,255,255,.25) 22%,rgba(185,166,221,.25) 60%,rgba(142,195,207,.45) 100%);box-shadow:inset 0 0 0 2px rgba(255,255,255,.7),inset -6px -8px 14px rgba(142,195,207,.35);display:grid;place-items:center;will-change:transform}
+.bub{position:absolute;left:0;top:0;width:var(--s);height:var(--s);border-radius:50%;border:0;padding:0;background:radial-gradient(circle at 32% 28%,rgba(255,255,255,.95) 0 10%,rgba(255,255,255,.25) 22%,rgba(185,166,221,.25) 60%,rgba(142,195,207,.45) 100%);box-shadow:inset 0 0 0 2px rgba(255,255,255,.7),inset -6px -8px 14px rgba(142,195,207,.35);display:grid;place-items:center;will-change:transform}
 .bub svg{width:52%;height:52%}
 .bub.gold{background:radial-gradient(circle at 32% 28%,#fff 0 10%,rgba(255,240,190,.5) 24%,rgba(232,192,102,.55) 100%);box-shadow:inset 0 0 0 2px rgba(255,248,220,.9)}
 .bub.pop{transition:transform .25s,opacity .25s;opacity:0}
@@ -1614,7 +1614,7 @@ function gBubbles(sh){
   function spawn(){
     const W=stage.clientWidth, Hh=stage.clientHeight, rr=Math.random(), sumo=rr<.07, gold=!sumo&&rr<.19, s=Math.round(sumo?84:54+Math.random()*34);
     const el=h(`<button class="bub ${gold?"gold":""} ${sumo?"sumo-b":""}" style="--s:${s}px" aria-label="فقاعة">${sumo?ART.sumo("happy"):gold?ART.starB():kinds[Math.floor(Math.random()*kinds.length)]}</button>`);
-    const b={el, x:Math.random()*(W-s), y:Hh-s*.4, s, vy:(sumo?70:42+Math.random()*30)+round*8, ph:Math.random()*6, gold, sumo, dead:false};
+    const b={el, x:Math.random()*Math.max(0,W-s), y:Math.max(0,Hh-s), s, vy:(sumo?70:42+Math.random()*30)+round*8, ph:Math.random()*6, gold, sumo, dead:false};
     el.style.transform=`translate(${b.x}px,${b.y}px)`;
     el.addEventListener("pointerdown", e=>{ e.preventDefault(); pop(b); });
     el.addEventListener("keydown", e=>{ if(e.key==="Enter"||e.key===" "){ e.preventDefault(); pop(b); } });
@@ -1632,7 +1632,9 @@ function gBubbles(sh){
     const dt=Math.min(.05,(now-last)/1000); last=now;
     spawnT-=dt; if(spawned<PER && spawnT<=0){ spawn(); spawnT=.75+Math.random()*.5; }
     const t=now/1000;
-    bubs.forEach(b=>{ if(b.dead) return; b.y-=b.vy*dt; const sx = motionOK()? Math.sin(t*1.4+b.ph)*14 : 0; b.el.style.transform=`translate(${b.x+sx}px,${b.y}px)`; if(b.y<-b.s-10){ b.dead=true; b.el.remove(); missed++; combo=0; } });
+    // الفريم هو الحدود: كل الفقاعة تبقى داخله، وتختفي بهدوء لما توصل للحافة العليا
+    const W=stage.clientWidth, Hh=stage.clientHeight;
+    bubs.forEach(b=>{ if(b.dead) return; b.y-=b.vy*dt; const maxX=Math.max(0,W-b.s); b.x=Math.min(Math.max(0,b.x),maxX); const sx = motionOK()? Math.sin(t*1.4+b.ph)*14 : 0; const x=Math.min(Math.max(0,b.x+sx),maxX), y=Math.min(Math.max(0,b.y),Math.max(0,Hh-b.s)); b.el.style.transform=`translate(${x}px,${y}px)`; b.el.style.opacity = b.y < b.s*.6 ? Math.max(0, b.y/(b.s*.6)) : 1; if(b.y<=0){ b.dead=true; b.el.remove(); missed++; combo=0; } });
     bubs = bubs.filter(b=>!b.dead || b.el.isConnected);
     if(spawned>=PER && bubs.every(b=>b.dead)){
       if(round<3) startRound();

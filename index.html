@@ -88,6 +88,8 @@ img{max-width:100%}
 .btn.danger{background:#C8705F;border-color:#8E4536;box-shadow:0 3px 0 #8E4536}
 .btn.small{min-height:40px;padding:4px 14px;font-size:.95rem}
 .btn[disabled]{opacity:.45;pointer-events:none}
+.btn.fashion-entry{background:linear-gradient(180deg,#E9A9C4,#B0608A);color:#FFFDF5;border-color:#8A3E66;box-shadow:0 3px 0 #8A3E66,0 0 18px rgba(233,169,196,.45)}
+.btn.fashion-entry svg{width:22px;height:22px}
 .btn.world-entry{background:linear-gradient(180deg,#9DBF8E,#5E9277);color:#FFFDF5;border-color:#3F6E58;box-shadow:0 3px 0 #3F6E58,0 0 18px rgba(157,191,142,.4)}
 .btn.tales-entry{background:linear-gradient(180deg,#5A4C9A,#2E2A5C);color:#FFE7AE;border-color:#1E1A3C;box-shadow:0 3px 0 #1E1A3C,0 0 18px rgba(246,200,106,.35)}
 .panel{background:var(--panel);border:2px solid var(--panel-edge);border-radius:var(--r-blob);box-shadow:var(--shadow)}
@@ -494,6 +496,7 @@ input[type=range]{width:100%;accent-color:var(--accent)}
 </style>
 <link rel="stylesheet" href="stories/tales.css">
 <link rel="stylesheet" href="world/world.css">
+<link rel="stylesheet" href="fashion/fashion.css">
 </head>
 <body class="paper-tex">
 <div id="app">
@@ -531,6 +534,12 @@ input[type=range]{width:100%;accent-color:var(--accent)}
 <script src="world/world-festival.js"></script>
 <script src="world/world-beach.js"></script>
 <script src="world/world-post.js"></script>
+<!-- دار إيلاف: عالم الأزياء (ملفات مستقلة بمجلد fashion) -->
+<script src="fashion/fashion-art.js"></script>
+<script src="fashion/fashion-core.js"></script>
+<script src="fashion/fashion-design.js"></script>
+<script src="fashion/fashion-games.js"></script>
+<script src="fashion/fashion-show.js"></script>
 <script>
 /* =====================================================================
    إعدادات الموقع — غيّر هنا الاسم والرسائل والألوان وترتيب الألعاب.
@@ -835,9 +844,9 @@ function go(route, push=true){
   if(push){ try{ history.pushState({route},"", "#"+route); }catch(e){} }
   const view = $("#view"); view.innerHTML="";
   const [kind,id] = route.split(":");
-  $("#topbar").hidden = route==="intro" || kind==="tales" || kind==="world";
+  $("#topbar").hidden = route==="intro" || kind==="tales" || kind==="world" || kind==="fashion";
   $("#viewTitle").textContent = kind==="game" ? GAMES[id].title : (titles[kind]? titles[kind]() : settings.siteTitle);
-  const fn = {intro:viewIntro, map:viewMap, paint:viewPaint, diary:viewDiary, cave:viewCave, jokes:viewJokes, game:viewGame, tales:viewTales, world:viewWorld}[kind] || viewMap;
+  const fn = {intro:viewIntro, map:viewMap, paint:viewPaint, diary:viewDiary, cave:viewCave, jokes:viewJokes, game:viewGame, tales:viewTales, world:viewWorld, fashion:viewFashion}[kind] || viewMap;
   cleanup = fn(view, id) || null;
   view.focus && view.focus();
 }
@@ -869,6 +878,7 @@ function viewIntro(root){
         <button class="btn honey" id="enterBtn" style="font-size:1.25rem;min-height:56px;padding:6px 30px">${esc(CONFIG.enterLabel)}</button>
         <button class="btn tales-entry" id="talesBtn" style="font-size:1.25rem;min-height:56px;padding:6px 26px">${IC.book||""}حكاياتنا</button>
         <button class="btn world-entry" id="worldBtn" style="font-size:1.25rem;min-height:56px;padding:6px 26px">${IC.map||""}عالمنا</button>
+        <button class="btn fashion-entry" id="fashionBtn" style="font-size:1.25rem;min-height:56px;padding:6px 26px">${FW.FI.hanger}دار إيلاف</button>
       </div>
     </div>
     <div class="intro-cast">
@@ -883,6 +893,7 @@ function viewIntro(root){
   girl.onclick = () => { react(girl,"jump"); Sound.soft(); };
   $("#talesBtn").onclick = () => { Sound.chime(); go("tales"); };
   $("#worldBtn").onclick = () => { Sound.chime(); go("world"); };
+  $("#fashionBtn").onclick = () => { Sound.chime(); window.__fashionFrom = "intro"; go("fashion"); };
   $("#enterBtn").onclick = () => {
     Sound.chime();
     const fin = () => { go("map"); if(!Store.get("toured", false)) setTimeout(tour, 350); };
@@ -936,7 +947,7 @@ function viewMap(root){
       ${ambientLayer(6)}
     </div></div>
     <div class="map-hint panel" id="mapHint">${esc(CONFIG.mapHint)}</div>
-    <div class="map-ui"><button class="btn ghost" id="allPlaces">${IC.list} كل الأماكن</button><button class="btn honey" id="mapSurprise">${IC.gift} فاجئيني</button><button class="btn tales-entry" id="mapTales">${IC.book||""} حكاياتنا</button><button class="btn world-entry" id="mapWorld">${IC.map||""} عالمنا</button></div>
+    <div class="map-ui"><button class="btn ghost" id="allPlaces">${IC.list} كل الأماكن</button><button class="btn honey" id="mapSurprise">${IC.gift} فاجئيني</button><button class="btn tales-entry" id="mapTales">${IC.book||""} حكاياتنا</button><button class="btn world-entry" id="mapWorld">${IC.map||""} عالمنا</button><button class="btn fashion-entry" id="mapFashion">${FW.FI.hanger} دار إيلاف</button></div>
   </section>`);
   root.appendChild(v);
   const scene=$(".mapscene",v), scroll=$(".mapscroll",v), path=$(".map-path path",v), tok=$("#heroTok",v), jt=$("#jmTok",v);
@@ -963,6 +974,7 @@ function viewMap(root){
   $$("[data-place]",v).forEach(b=>b.onclick=()=>openPlace(b.dataset.place));
   $("#mapTales",v).onclick = () => { Sound.soft(); go("tales"); };
   $("#mapWorld",v).onclick = () => { Sound.soft(); go("world"); };
+  $("#mapFashion",v).onclick = () => { Sound.soft(); window.__fashionFrom = "map"; go("fashion"); };
   // secrets
   $$("[data-secret]",v).forEach(b=>b.onclick=()=>{
     const s = SECRETS.find(x=>x.id===b.dataset.secret); if(progress.secrets.includes(s.id)) return;
@@ -1949,7 +1961,7 @@ $("#motionBtn").onclick=()=>{ if(sysReduce.matches){ toast("الحركة مخف�
 fillIcons(); applyTheme(); prefs.sound=false; syncToggles(); renderStars(false);
 if(!Store.ok) setTimeout(()=>toast("المتصفح ما يسمح بالحفظ — التقدّم يضيع عند الإغلاق","bulb"), 1200);
 const start = location.hash.slice(1);
-const valid = r => ["intro","map","paint","diary","cave","jokes"].includes(r) || r==="tales" || r.startsWith("tales:") || r==="world" || r.startsWith("world:") || (r.startsWith("game:") && GAMES[r.split(":")[1]]);
+const valid = r => ["intro","map","paint","diary","cave","jokes"].includes(r) || r==="tales" || r.startsWith("tales:") || r==="world" || r.startsWith("world:") || r==="fashion" || r.startsWith("fashion:") || (r.startsWith("game:") && GAMES[r.split(":")[1]]);
 go(valid(start)?start:"intro", false);
 try{ history.replaceState({route:current},"","#"+current); }catch(e){}
 </script>

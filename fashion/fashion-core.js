@@ -72,8 +72,8 @@ const FW = (() => {
     if(k==="c") return s(`<circle cx="30" cy="30" r="24" fill="${FArt.col(id)}" stroke="${FArt.shade(FArt.col(id),-.35)}" stroke-width="2.4"/><path d="M18 22a14 14 0 0112-8" stroke="#fff" stroke-opacity=".7" stroke-width="3" fill="none" stroke-linecap="round"/>`);
     if(k==="p"){ const u=FArt.uid(); return s(`<defs>${FArt.patternDef(u, id, "#8E5A9E", .8)}</defs><rect x="6" y="6" width="48" height="48" rx="10" fill="#F7E6EE" stroke="#B98EA6" stroke-width="2"/><rect x="6" y="6" width="48" height="48" rx="10" fill="url(#${u})"/>`); }
     if(k==="f"){ const u=FArt.uid(); return s(`<defs><clipPath id="${u}k"><path d="M8 14q22-10 44 0v32q-22 10-44 0z"/></clipPath>${FArt.fabricDefs(u, id, "#C9B6E8")}</defs><path d="M8 14q22-10 44 0v32q-22 10-44 0z" fill="#C9B6E8" stroke="#7E6AAE" stroke-width="2"/>${FArt.fabricDefs(u,id,"#C9B6E8")?`<rect x="0" y="0" width="60" height="60" fill="url(#${u})" clip-path="url(#${u}k)"/>`:""}<path d="M8 14q22-10 44 0v32q-22 10-44 0z" fill="none" stroke="#7E6AAE" stroke-width="2"/>`); }
-    if(k==="w") return `<svg viewBox="40 60 280 150" width="${size}" height="${size}" class="fs-sw">${FArt.wings(Object.assign(FArt.BLANK_WINGS(), {on:true, shape:id, flap:"none", size:.62}), {anim:false})}</svg>`;
-    if(k==="a"){ const look=Object.assign(FArt.BLANK(),{head:FArt.HEAD_ACC[id]?id:"none", neck:FArt.NECK_ACC[id]?id:"none", c1:"rose", c2:"lilac"}); const inner = FArt.HEAD_ACC[id] ? FArt.headAcc(look).replace(/^<svg[^>]*>|<\/svg>$/g,"") : `<g>${FArt.bodice(look).replace(/^<svg[^>]*>|<\/svg>$/g,"")}</g>`; return `<svg viewBox="${FArt.HEAD_ACC[id]?"90 0 190 120":"130 170 110 90"}" width="${size}" height="${size}" class="fs-sw">${inner}</svg>`; }
+    if(k==="w") return `<svg viewBox="-10 -10 380 390" width="${size}" height="${size}" class="fs-sw">${FArt.wings(Object.assign(FArt.BLANK_WINGS(), {on:true, shape:id, flap:"none", size:.62}), {anim:false})}</svg>`;
+    if(k==="a"){ const look=Object.assign(FArt.BLANK(),{head:FArt.HEAD_ACC[id]?id:"none", neck:FArt.NECK_ACC[id]?id:"none", c1:"rose", c2:"lilac"}); const inner = FArt.HEAD_ACC[id] ? FArt.headAcc(look).replace(/^<svg[^>]*>|<\/svg>$/g,"") : `<g>${FArt.bodice(look).replace(/^<svg[^>]*>|<\/svg>$/g,"")}</g>`; return `<svg viewBox="${FArt.HEAD_ACC[id]?"40 -14 290 130":"130 170 110 90"}" width="${size}" height="${size}" class="fs-sw">${inner}</svg>`; }
     if(k==="bg"){ const b=STAGE_BG[id]; return s(`<rect x="4" y="8" width="52" height="44" rx="8" fill="${b.a}"/><path d="M4 40q26-14 52 0v4a8 8 0 01-8 8H12a8 8 0 01-8-8z" fill="${b.b}"/><circle cx="44" cy="20" r="5" fill="#FFF3C8" opacity=".9"/>`); }
     if(k==="pose") return s(`<circle cx="30" cy="30" r="24" fill="#F7E6EE" stroke="#B98EA6" stroke-width="2"/><path d="M30 16a4 4 0 110 8 4 4 0 010-8zM30 25v14M30 39l-6 10M30 39l6 10M30 28l${id==="sparkle"?"-9 -9M30 28l9 -9":id==="wave"?"-9 4M30 28l9 -9":"-10 6M30 28l10 6"}" stroke="#8E5A9E" stroke-width="3" fill="none" stroke-linecap="round"/>`);
     return "";
@@ -116,7 +116,7 @@ const FW = (() => {
   const isOpen = id => { load(); const r=REG[id]; return !r.need || r.need(); };
 
   /* ---------------- الخيوط الذهبية (أماكن مخفية) ---------------- */
-  const CLUES = {atelier:"petal", wings:"cloud", backstage:"star", photo:"crystal"};
+  const CLUES = {atelier:"crystal", wings:"phoenix", backstage:"starburst", photo:"rainbowwing"};
   function clueEl(regionId, cls=""){
     load(); if(S.clues[regionId]) return null;
     const el = h(`<button class="fs-clue ${cls}" aria-label="شي يلمع">${FArt.svg?`<svg viewBox="0 0 40 40"><circle cx="20" cy="20" r="11" fill="#F2D27A" stroke="#9C7A2E" stroke-width="2.4"/><path d="M12 20c5-6 11 6 16 0" stroke="#9C7A2E" stroke-width="2" fill="none"/><path d="M28 12l6-6" stroke="#D9AE4E" stroke-width="2.4" stroke-linecap="round"/></svg>`:""}</button>`);
@@ -350,17 +350,19 @@ const FW = (() => {
     const part = (k, rot=0) => { const p=FArt.DCLIP[k]; g.save(); g.translate(ox,oy); g.scale(sc,sc);
       if(rot){ g.translate(p.o[0]*3.6, p.o[1]*5); g.rotate(rot*Math.PI/180); g.translate(-p.o[0]*3.6, -p.o[1]*5); }
       g.beginPath(); p.c.forEach(([x,y],i)=> i?g.lineTo(x*3.6,y*5):g.moveTo(x*3.6,y*5)); g.closePath(); g.clip(); g.drawImage(girlImg,0,0,360,500); g.restore(); };
-    const layer = async (s, k, rot=0) => { if(!s) return; const im = await svgImg(s); g.save(); g.translate(ox,oy); g.scale(sc,sc); if(rot){ const p=FArt.DCLIP[k]; g.translate(p.o[0]*3.6,p.o[1]*5); g.rotate(rot*Math.PI/180); g.translate(-p.o[0]*3.6,-p.o[1]*5); } g.drawImage(im, -360*.6, -500*.3, 360*2.2, 500*1.6); g.restore(); };
+    const layer = async (s, k, rot=0) => { if(!s || !/<path|<rect|<circle|<ellipse|<g/.test(s)) return; const im = await svgImg(s); g.save(); g.translate(ox,oy); g.scale(sc,sc); if(rot){ const p=FArt.DCLIP[k]; g.translate(p.o[0]*3.6,p.o[1]*5); g.rotate(rot*Math.PI/180); g.translate(-p.o[0]*3.6,-p.o[1]*5); } g.drawImage(im, -360*.6, -500*.3, 360*2.2, 500*1.6); g.restore(); };
     // نكبر مساحة الـ SVG حتى الجناح ما ينقص
     const wide = s => s && s.replace('viewBox="0 0 360 500"', 'viewBox="-216 -150 792 800"');
-    await layer(wide(FArt.back(look, wings, {anim:false})));
+    const Ly = FArt.layers(look, wings, {anim:false});
+    await layer(wide(Ly.back));
     part("legL"); part("legR");
-    await layer(wide(FArt.skirt(look)));
+    await layer(wide(Ly.legL)); await layer(wide(Ly.legR));
+    await layer(wide(Ly.skirt)); await layer(wide(Ly.hip));
     part("armL", pose.aL); part("armR", pose.aR); part("head");
-    await layer(wide(FArt.bodice(look)));
-    await layer(wide(FArt.sleeve(look,"L")), "armL", pose.aL); await layer(wide(FArt.sleeve(look,"R")), "armR", pose.aR);
+    await layer(wide(Ly.core));
+    await layer(wide(Ly.slL), "armL", pose.aL); await layer(wide(Ly.slR), "armR", pose.aR);
     // الشعر ضمن جزء الراس، والإكسسوار فوقه
-    await layer(wide(FArt.headAcc(look)));
+    await layer(wide(Ly.acc));
     if(o.caption){ g.fillStyle="rgba(251,246,232,.9)"; const bh=H*.085; g.fillRect(0,H-bh,W,bh); g.fillStyle="#3D3A2E"; g.font=`800 ${Math.round(H*.036)}px ${getComputedStyle(document.body).fontFamily}`; g.textAlign="center"; g.direction="rtl"; g.fillText(o.caption, W/2, H-bh*.32); }
     return new Promise(res => cv.toBlob(b=>res(b), "image/png"));
   }

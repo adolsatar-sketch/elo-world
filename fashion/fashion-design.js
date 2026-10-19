@@ -30,7 +30,20 @@ const FDesign = (() => {
   }
 
   /* ---------------- قوالب البداية ---------------- */
+  const O = o => Object.assign({mode:"outfit"}, o);
   const TEMPLATES = [
+    {n:"جينز وتيشيرت", look:O({top:"tee", c1:"white", c2:"rose", print:"heart", bottom:"jeans", bCut:"straight", bColor:"denim2", bFabric:"denim", shoes:"sneakers", shoeC:"white", head:"headband"})},
+    {n:"طقم رياضي", look:O({top:"sport", c1:"coral", c2:"white", fabric:"jersey", bottom:"joggers", bColor:"navy", bC2:"white", bFabric:"jersey", shoes:"sport", shoeC:"white", head:"cap"})},
+    {n:"أوفرول جينز", look:O({top:"tee", c1:"lemon", c2:"white", bottom:"overall", bCut:"mom", bLen:"ankle", bCuffs:true, bColor:"denim1", bFabric:"denim", shoes:"maryjane", shoeC:"cherry", socks:"stripe", sockC:"rose", head:"bucket"})},
+    {n:"كنزة وتنورة بليسيه", look:O({top:"sweater", c1:"honey", c2:"cream", pat:"stripes", fabric:"knit", bottom:"pleated", len:"midi", bColor:"navy", bFabric:"cotton", shoes:"boots", shoeC:"mocha", socks:"tights", sockC:"charcoal", neck:"scarf"})},
+    {n:"جاكيت جينز وبنطلون واسع", look:O({top:"jacket", c1:"denim1", c2:"lemon", fabric:"denim", print:"smile", bottom:"wide", bColor:"cream", bFabric:"linen", shoes:"flats", shoeC:"rose", bag:"cross", bagC:"mocha", head:"beret"})},
+    {n:"هودي وجينز ضيق", look:O({top:"hoodie", c1:"lilac", c2:"white", fabric:"fleece", bottom:"jeans", bCut:"skinny", bColor:"denim3", bFabric:"denim", shoes:"sneakers", shoeC:"lilac", bag:"backpack", bagC:"coral"})},
+    {n:"قميص وبنطلون مستقيم", look:O({top:"shirt", c1:"sky", c2:"white", bottom:"pants", bCut:"straight", bColor:"khaki", bFabric:"linen", shoes:"orig", wrist:"watch"})},
+    {n:"بلوزة وتنورة تول", look:O({top:"blouse", tSleeve:"puff", tNeck:"peter", c1:"cream", c2:"rose", tuck:true, bottom:"tutu", len:"short", bColor:"blush", bC2:"rose", shoes:"flats", shoeC:"blush", head:"bow"})},
+    {n:"كارديغان وتنورة جينز", look:O({top:"cardigan", c1:"mint", c2:"white", fabric:"knit", print:"flower", bottom:"denimskirt", len:"short", bColor:"denim2", shoes:"sneakers", shoeC:"white", socks:"knee", sockC:"white", bag:"tote", bagC:"lemon"})},
+    {n:"بنطلون شارلستون", look:O({top:"tee", c1:"peach", c2:"plum", print:"rainbow", bottom:"jeans", bCut:"flare", bColor:"denim1", shoes:"sneakers", shoeC:"peach", head:"sunhat", bag:"waist", bagC:"plum"})},
+    {n:"فستان قصير يومي", look:{type:"dress", cut:"soft", len:"short", sleeve:"cap", collar:"round", hem:"straight", c1:"mint", c2:"white", pat:"dots", fabric:"cotton", belt:"ribbon", shoes:"sneakers", shoeC:"white", socks:"knee", sockC:"white"}},
+    {n:"فستان متوسط بالجيوب", look:{type:"dress", cut:"straight", len:"midi", sleeve:"long", collar:"peter", hem:"straight", c1:"denim2", c2:"white", pat:"none", fabric:"denim", belt:"none", trims:{buttons:true}, shoes:"boots", shoeC:"mocha"}},
     {n:"فستان الربيع", look:{type:"dress", cut:"soft", len:"midi", sleeve:"puff", collar:"peter", hem:"scallop", c1:"rose", c2:"cream", pat:"daisies", fabric:"cotton", belt:"ribbon", head:"flowers"}},
     {n:"عباءة الغيوم", look:{type:"cape", cut:"wide", len:"long", sleeve:"long", collar:"round", hem:"straight", c1:"sky", c2:"white", pat:"none", fabric:"silk", belt:"jewel"}},
     {n:"طقم الأوراق", look:{type:"set", cut:"layers", len:"midi", sleeve:"flutter", collar:"square", hem:"ruffle", c1:"mint", c2:"sage", pat:"stripes", fabric:"cotton", belt:"none"}},
@@ -44,12 +57,15 @@ const FDesign = (() => {
     if(!FW.owned("c",l.c1)) l.c1="rose"; if(!FW.owned("c",l.c2)) l.c2="cream";
     if(!FW.owned("p",l.pat)) l.pat="none"; if(!FW.owned("f",l.fabric)) l.fabric="cotton";
     if(!FW.owned("a",l.head)) l.head="none"; if(!FW.owned("a",l.neck)) l.neck="none";
+    if(!FW.owned("p",l.bPat)) l.bPat="none"; if(!FW.owned("f",l.bFabric)) l.bFabric="cotton";
     const w = Object.assign(A.BLANK_WINGS(), FW.curWings(), clone(t.wings||{}));
     return {look:l, wings:w};
   }
 
   /* ---------------- مشغل إيلاف ---------------- */
-  const TABS = [["piece","القطعة"],["cut","القصّة والمقاس"],["details","الأكمام والياقة"],["colors","الألوان"],["pattern","النقشة"],["fabric","القماش"],["trim","الزينة والحزام"],["acc","الإكسسوار"],["motion","اللمعة والحركة"]];
+  const TABS_DRESS = [["piece","القطعة"],["cut","القصّة والمقاس"],["details","الأكمام والياقة"],["colors","الألوان"],["pattern","النقشة"],["fabric","القماش"],["trim","الزينة والحزام"],["shoes","الحذاء والجوارب"],["acc","الإكسسوار والشنطة"],["motion","اللمعة والحركة"]];
+  const TABS_OUTFIT = [["piece","القطعة"],["top","العلوية"],["colors","ألوان العلوية"],["pattern","نقشة وقماش العلوية"],["bottom","السفلية"],["bcolor","ألوان وقماش السفلية"],["shoes","الحذاء والجوارب"],["acc","الإكسسوار والشنطة"],["motion","اللمعة والحركة"]];
+  const tabsFor = L => L.mode==="outfit" ? TABS_OUTFIT : TABS_DRESS;
   FW.region("atelier", (body, {first}) => {
     const S = FW.S;
     let look = Object.assign(A.BLANK(), clone(S.cur.look)), wings = Object.assign(A.BLANK_WINGS(), clone(S.cur.wings));
@@ -64,7 +80,7 @@ const FDesign = (() => {
         <div class="fa-name"><input data-name maxlength="28" placeholder="اسم التصميم" aria-label="اسم التصميم"></div>
       </div>
       <div class="fa-panel">
-        <div class="fa-tabs" role="tablist">${TABS.map(([k,n])=>`<button data-tab="${k}" aria-pressed="${k===tab}">${n}</button>`).join("")}</div>
+        <div class="fa-tabs" role="tablist"></div>
         <div class="fa-opts"></div>
         <div class="fa-acts">
           <button class="btn ghost small" data-new>${IC.plus} من الصفر</button>
@@ -93,25 +109,46 @@ const FDesign = (() => {
     const restore = () => { const o=JSON.parse(hist[hi]); look=o.look; wings=o.wings; apply(); render(); refreshHist(); };
     function render(){
       const L = look; let s = "";
-      if(tab==="piece") s = `<h4>نوع القطعة</h4>${chips("type", A.TYPES, L.type)}<p class="fc-note">${({dress:"فستان قطعة وحدة.", coat:"معطف مفتوح فوق فستان باللون الثاني.", set:"قطعة فوگ (تونيك) وتنورة باللون الثاني.", cape:"فستان وعباءة طويلة من ورا.", festive:"طبقة تول ناعمة فوق التنورة.", special:"بتلات كبيرة فوق التنورة — للعروض الخيالية."})[L.type]}</p>`;
+      if(tab==="piece"){ s = `<h4>شنو تصممين؟</h4>${chips("mode", A.MODES, L.mode)}`;
+        if(L.mode==="outfit") s += `<p class="fc-note">نسّقي بحرية: قطعة علوية، وقطعة سفلية، وحذاء، وإكسسوارات. كل قطعة تنلبس على جسم إيلاف وتتحرك وياها.</p><h4>القطعة العلوية</h4>${chips("top", A.TOPS, L.top)}<h4>القطعة السفلية</h4>${chips("bottom", A.BOTTOMS, L.bottom)}`;
+        else s += `<h4>نوع القطعة</h4>${chips("type", A.TYPES, L.type)}<p class="fc-note">${({dress:"فستان قطعة وحدة.", coat:"معطف مفتوح فوق فستان باللون الثاني.", set:"قطعة فوگ (تونيك) وتنورة باللون الثاني.", cape:"فستان وعباءة طويلة من ورا.", festive:"طبقة تول ناعمة فوق التنورة.", special:"بتلات كبيرة فوق التنورة — للعروض الخيالية."})[L.type]}</p><h4>الطول</h4>${chips("len", A.LENGTHS, L.len)}`; }
+      if(tab==="top"){ const longOnly = ["sweater","hoodie","cardigan","jacket","sport"].includes(L.top);
+        s = `<h4>نوع القطعة العلوية</h4>${chips("top", A.TOPS, L.top)}`;
+        if(!longOnly) s += `<h4>الأكمام</h4>${chips("tSleeve", A.TSLEEVES, L.tSleeve)}`; else s += `<p class="fc-note">${A.TOPS[L.top]} دايماً بأكمام طويلة.</p>`;
+        if(["tee","blouse","sweater"].includes(L.top)) s += `<h4>الياقة</h4>${chips("tNeck", A.TNECKS, L.tNeck)}`;
+        if(L.top!=="shirt") s += `<h4>رسمة على الصدر</h4>${chips("print", A.PRINTS, L.print)}`;
+        if(!["jacket","cardigan"].includes(L.top) && L.bottom!=="overall") s += `<div class="fc-tgs">${toggle("tuck","مدخّلة جوّا",L.tuck)}</div>`;
+        s += `<h4>المقاس (نسبي)</h4>${chips("tSize", {S:"ضيق شوية", M:"مضبوط", L:"واسع شوية"}, L.tSize)}<p class="fc-note">المقاس يغيّر اتساع القطع بس — إيلاف تبقى نفسها.</p>`; }
+      if(tab==="bottom"){ const pants = A.isPants(L.bottom);
+        s = `<h4>نوع القطعة السفلية</h4>${chips("bottom", A.BOTTOMS, L.bottom)}`;
+        if(pants){ if(L.bottom!=="joggers" && L.bottom!=="wide") s += `<h4>القصّة</h4>${chips("bCut", A.PCUTS, L.bCut)}`; s += `<h4>الطول</h4>${chips("bLen", A.PLENS, L.bLen)}<div class="fc-tgs">${toggle("bCuffs","طيّة بالحافة",L.bCuffs)}</div>`; }
+        else s += `<h4>الطول</h4>${chips("len", A.LENGTHS, L.len)}${L.bottom==="skirt"?`<h4>القصّة</h4>${chips("cut", A.CUTS, L.cut)}<h4>الحافة</h4>${chips("hem", A.HEMS, L.hem)}`:""}`; }
+      if(tab==="bcolor"){ s = `<h4>لون القطعة السفلية</h4>${palette("bColor", L.bColor)}<h4>لون ثاني (خط/نقشة)</h4>${palette("bC2", L.bC2)}<h4>النقشة</h4>${swatches("bPat","p",Object.keys(A.PATTERNS),L.bPat)}<h4>القماش</h4>${swatches("bFabric","f",Object.keys(A.FABRICS),L.bFabric)}`; }
+      if(tab==="shoes"){ s = `<h4>الحذاء</h4>${chips("shoes", A.SHOES, L.shoes)}${L.shoes!=="orig"?`<h4>لون الحذاء</h4>${palette("shoeC", L.shoeC)}`:""}<h4>الجوارب</h4>${chips("socks", A.SOCKS, L.socks)}${L.socks!=="orig"?`<h4>لون الجوارب</h4>${palette("sockC", L.sockC)}`:""}`; }
       if(tab==="cut") s = `<h4>القصّة</h4>${chips("cut", A.CUTS, L.cut)}<h4>الطول</h4>${chips("len", A.LENGTHS, L.len)}<h4>المقاس (نسبي)</h4>${chips("size", {S:"صغير", M:"وسط", L:"كبير"}, L.size)}<p class="fc-note">المقاس يغيّر حجم القطعة بس، وإيلاف تبقى نفسها.</p>`;
       if(tab==="details") s = `<h4>الأكمام</h4>${chips("sleeve", A.SLEEVES, L.sleeve)}${slider("sleeveW","عرض الكم",L.sleeveW,.6,1.6,.1,sizeTxt)}<h4>الياقة</h4>${chips("collar", A.COLLARS, L.collar)}<h4>الحافة</h4>${chips("hem", A.HEMS, L.hem)}`;
-      if(tab==="colors") s = `<h4>اللون الأساسي</h4>${palette("c1", L.c1)}<h4>اللون الثانوي</h4>${palette("c2", L.c2)}<p class="fc-note">الثانوي يروح للياقة والحزام والنقشة والبطانة.</p>`;
-      if(tab==="pattern") s = `<h4>النقشة</h4>${swatches("pat","p",Object.keys(A.PATTERNS),L.pat)}${L.pat!=="none"?slider("patScale","حجم النقشة",L.patScale,.6,1.6,.1,sizeTxt):""}`;
+      if(tab==="colors" && L.mode==="outfit") s = `<h4>لون القطعة العلوية</h4>${palette("c1", L.c1)}<h4>اللون الثاني (الياقة، الرسمة، اللي جوّا الجاكيت)</h4>${palette("c2", L.c2)}`;
+      else if(tab==="colors") s = `<h4>اللون الأساسي</h4>${palette("c1", L.c1)}<h4>اللون الثانوي</h4>${palette("c2", L.c2)}<p class="fc-note">الثانوي يروح للياقة والحزام والنقشة والبطانة.</p>`;
+      if(tab==="pattern") s = `<h4>النقشة</h4>${swatches("pat","p",Object.keys(A.PATTERNS),L.pat)}${L.pat!=="none"?slider("patScale","حجم النقشة",L.patScale,.6,1.6,.1,sizeTxt):""}${L.mode==="outfit"?`<h4>القماش</h4>${swatches("fabric","f",Object.keys(A.FABRICS),L.fabric)}`:""}`;
       if(tab==="fabric") s = `<h4>القماش</h4>${swatches("fabric","f",Object.keys(A.FABRICS),L.fabric)}`;
       if(tab==="trim") s = `<h4>زينة</h4><div class="fc-tgs">${Object.entries(A.TRIMS).map(([k,n])=>`<button class="fc-tg" data-trim="${k}" aria-pressed="${!!(L.trims&&L.trims[k])}"><i></i>${n}</button>`).join("")}</div><h4>الحزام</h4>${chips("belt", A.BELTS, L.belt)}`;
-      if(tab==="acc") s = `<h4>للراس</h4>${chips("head", A.HEAD_ACC, L.head, "a")}<h4>للرقبة</h4>${chips("neck", A.NECK_ACC, L.neck, "a")}${slider("accSize","حجم الإكسسوار",L.accSize,.7,1.3,.1,sizeTxt)}`;
+      if(tab==="acc") s = `<h4>للراس</h4>${chips("head", A.HEAD_ACC, L.head, "a")}<h4>للرقبة</h4>${chips("neck", A.NECK_ACC, L.neck, "a")}${slider("accSize","حجم الإكسسوار",L.accSize,.7,1.3,.1,sizeTxt)}<h4>الشنطة</h4>${chips("bag", A.BAGS, L.bag)}${L.bag!=="none"?palette("bagC", L.bagC):""}<h4>للإيد</h4>${chips("wrist", A.WRIST, L.wrist)}${L.mode==="outfit"?`<p class="fc-note">ألوان القبعة تاخذ من لون القطعة العلوية.</p>`:""}`;
       if(tab==="motion") s = `<div class="fc-tgs">${toggle("sparkle","لمعة خفيفة",L.sparkle)}${toggle("flow","حركة القماش",L.flow)}</div><p class="fc-note">حركة القماش تخلي التنورة تتمايل ويا المشي. اللمعة هادية وما تومض بقوة.</p><button class="btn ghost small" data-twirl>${FW.FI.spark} خليها تلف</button> <button class="btn ghost small" data-wingsgo>${FW.FI.spark} صممي جناح</button>`;
+      const T = tabsFor(L); if(!T.some(t=>t[0]===tab)){ tab = "piece"; return render(); }
+      $(".fa-tabs",body).innerHTML = T.map(([k,n])=>`<button data-tab="${k}" aria-pressed="${k===tab}">${n}</button>`).join("");
       opts.innerHTML = s; fillIcons(opts);
       const tw=$("[data-twirl]",opts); if(tw) tw.onclick = twirl;
       const wg=$("[data-wingsgo]",opts); if(wg) wg.onclick = ()=>{ FW.setCur(look,wings,name,id); go("fashion:wings"); };
     }
     bindPanel(opts, ()=>look, (k, commit, rangeEnd) => {
+      // أوفرول: القطعة العلوية تنلبس جوّاه. الجينز ياخذ قماش ولون جينز تلقائياً
+      if(k==="bottom"){ if((look.bottom==="jeans"||look.bottom==="overall"||look.bottom==="denimskirt") && !/^denim/.test(look.bColor)){ look.bColor="denim2"; look.bFabric="denim"; } else if(!["jeans","overall","denimskirt"].includes(look.bottom) && look.bFabric==="denim") look.bFabric = look.bottom==="joggers"?"jersey":"cotton"; }
+      if(k==="mode" && look.mode==="outfit" && look.shoes==="orig") look.shoes = "sneakers";
       apply();
       if(commit){ push(); if(!rangeEnd) render(); }
       if(k==="c1"||k==="c2"||k==="pat") dl.emo("thinking", 1200);
     });
-    $$("[data-tab]",body).forEach(b=>b.onclick=()=>{ tab=b.dataset.tab; $$("[data-tab]",body).forEach(x=>x.setAttribute("aria-pressed", x===b)); render(); FW.sfx("page"); if(tab==="colors") dl.emo("thinking"); if(tab==="piece") dl.emo("sketch"); });
+    $(".fa-tabs",body).onclick = e => { const b=e.target.closest("[data-tab]"); if(!b) return; tab=b.dataset.tab; render(); FW.sfx("page"); if(tab==="colors") dl.emo("thinking"); if(tab==="piece") dl.emo("sketch"); };
     $("[data-undo]",body).onclick = () => { if(hi>0){ hi--; restore(); FW.sfx("soft"); status("رجعنا خطوة"); } };
     $("[data-redo]",body).onclick = () => { if(hi<hist.length-1){ hi++; restore(); FW.sfx("soft"); status("رجعت الخطوة"); } };
     nameIn.addEventListener("input", () => { name = nameIn.value.trim(); FW.setCur(look, wings, name, id); });
@@ -156,12 +193,12 @@ const FDesign = (() => {
   }
 
   /* ---------------- ورشة الأجنحة ---------------- */
-  const WTABS = [["shape","الشكل"],["size","الحجم والفرد"],["color","الألوان"],["pat","النقشة"],["shine","اللمعة والشفافية"],["move","الحركة"]];
+  const WTABS = [["ready","تصاميم جاهزة"],["shape","الشكل"],["size","الحجم والامتداد"],["color","الألوان والطبقات"],["pat","النقشة"],["shine","اللمعة والشفافية"],["move","الحركة"]];
   FW.region("wings", (body, {first}) => {
     const S = FW.S;
     let look = Object.assign(A.BLANK(), clone(S.cur.look)), w = Object.assign(A.BLANK_WINGS(), clone(S.cur.wings));
     if(!w.on){ w.on = true; }
-    let tab="shape", playing = true;
+    let tab="ready", playing = true;
     const hist=[JSON.stringify(w)]; let hi=0;
     body.innerHTML = `<div class="fa fwg">
       <div class="fa-stage fs-wings"><div class="fwg-sky" aria-hidden="true">${[0,1,2,3,4].map(i=>`<i style="left:${10+i*19}%;--d:${-i*1.3}s"></i>`).join("")}</div><div class="fa-plat"></div><div class="fa-doll"></div>
@@ -184,14 +221,16 @@ const FDesign = (() => {
     const ref = () => { $("[data-undo]",body).disabled=hi<=0; $("[data-redo]",body).disabled=hi>=hist.length-1; };
     function render(){
       let s="";
-      if(tab==="shape"){ s = `<h4>شكل الجناح</h4>${swatches("shape","w",ownedW,w.shape)}<h4>جناح من تصميمج</h4><div class="fc-chips" data-k="shape"><button data-v="custom" aria-pressed="${w.shape==="custom"}">${FW.FI.spark} ادمجي شكلين</button></div>${w.shape==="custom"?`<h5>الجزء الفوقاني</h5>${chips("top", Object.fromEntries(ownedW.filter(x=>FW.owned("w",x)).map(x=>[x,A.WINGS[x]])), w.top)}<h5>الجزء الجوّاني</h5>${chips("bot", Object.fromEntries(ownedW.filter(x=>FW.owned("w",x)).map(x=>[x,A.WINGS[x]])), w.bot)}`:""}`; }
-      if(tab==="size") s = `${slider("size","حجم الجناح",w.size,.7,1.3,.05,sizeTxt)}${slider("spread","فرد الجناح",w.spread,-10,35,1,v=>v+"°")}<h4>عدد الطبقات</h4>${chips("layers",{1:"طبقة",2:"طبقتين",3:"ثلاث"},String(w.layers))}`;
-      if(tab==="color") s = `<h4>اللون الأساسي</h4>${palette("c1", w.c1)}<h4>اللون الثاني</h4>${palette("c2", w.c2)}<div class="fc-tgs">${toggle("grad","تدرّج من الوسط",w.grad)}</div>`;
+      if(tab==="ready") s = `<p class="fc-note">اختاري تصميم جاهز، وبعدين عدّلي عليه براحتج من باقي الأقسام.</p><div class="fwg-ready">${A.WPRESETS.map((p,i)=>`<button data-preset="${i}"><svg viewBox="-10 -10 380 390">${A.wings(Object.assign(A.BLANK_WINGS(),p.w,{on:true,size:.62,flap:"none",trail:false}),{anim:false})}</svg><small>${esc(p.n)}</small></button>`).join("")}</div>`;
+      if(tab==="shape"){ s = `<h4>شكل الجناح</h4>${swatches("shape","w",ownedW,w.shape)}<h4>جناح من تصميمج</h4><div class="fc-chips" data-k="shape"><button data-v="custom" aria-pressed="${w.shape==="custom"}">${FW.FI.spark} ركّبي جناح من شكلين</button></div>${w.shape==="custom"?`<h5>الجزء الفوقاني</h5>${chips("top", Object.fromEntries(ownedW.filter(x=>FW.owned("w",x)).map(x=>[x,A.WINGS[x]])), w.top)}<h5>الجزء الجوّاني</h5>${chips("bot", Object.fromEntries(ownedW.filter(x=>FW.owned("w",x)).map(x=>[x,A.WINGS[x]])), w.bot)}`:""}`; }
+      if(tab==="size") s = `${slider("size","الحجم الكلي",w.size,.8,1.25,.05,sizeTxt)}${slider("span","الامتداد (العرض)",w.span,.7,1.4,.05,v=>Math.round(v*100)+"%")}${slider("height","الارتفاع",w.height,.7,1.4,.05,v=>Math.round(v*100)+"%")}${slider("spread","ميلان الجناح",w.spread,-10,30,1,v=>v+"°")}<p class="fc-note">الجناح دايماً ورا إيلاف ومتوازن على الجهتين، فما يغطي وجهها ولا ملابسها.</p>`;
+      if(tab==="color") s = `<h4>عدد الطبقات</h4>${chips("layers",{1:"طبقة",2:"طبقتين",3:"ثلاث",4:"أربع"},String(w.layers))}<h4>اللون الأساسي</h4>${palette("c1", w.c1)}<h4>اللون الثاني${w.layers>1?" (الطبقة الثانية)":""}</h4>${palette("c2", w.c2)}${w.layers>2?`<h4>لون الطبقة الثالثة</h4>${palette("c3", w.c3)}`:""}<div class="fc-tgs">${toggle("grad","تدرّج من الوسط",w.grad)}</div>`;
       if(tab==="pat") s = `<h4>نقشة الجناح</h4>${swatches("pat","p",["none","dots","stars","hearts","waves","constellation","leaves","clouds"],w.pat)}`;
-      if(tab==="shine") s = `${slider("shine","اللمعة",w.shine,0,1,.05,v=>Math.round(v*100)+"%")}${slider("alpha","الوضوح (عكس الشفافية)",w.alpha,.4,1,.05,v=>Math.round(v*100)+"%")}`;
+      if(tab==="shine") s = `${slider("shine","اللمعة",w.shine,0,1,.05,v=>Math.round(v*100)+"%")}${slider("alpha","الوضوح (عكس الشفافية)",w.alpha,.4,1,.05,v=>Math.round(v*100)+"%")}<div class="fc-tgs">${toggle("edge","حافة مضيئة",w.edge)}</div>`;
       if(tab==="move") s = `<h4>الرفرفة</h4>${chips("flap",{none:"ثابت",soft:"هادية",flutter:"سريعة"},w.flap)}${slider("speed","سرعة الرفرفة",w.speed,.5,2,.1,v=>v<.8?"بطيئة":v>1.4?"سريعة":"وسط")}<div class="fc-tgs">${toggle("trail","أثر ضوئي",w.trail)}</div><p class="fc-note">${motionOK()?"":"الحركة مخفّضة، فالجناح يبقى ثابت."}</p>`;
       opts.innerHTML = s;
     }
+    opts.addEventListener("click", e => { const b=e.target.closest("[data-preset]"); if(!b) return; const pr=A.WPRESETS[+b.dataset.preset]; w = Object.assign(A.BLANK_WINGS(), {on:true}, clone(pr.w)); if(!FW.owned("p",w.pat)) w.pat="none"; apply(); push(); FW.sfx("sparkle"); dl.emo("happy"); $(".fa-status",body).textContent = "اخترتي: "+pr.n+" — عدّلي عليه براحتج"; $(".fwg-on [data-tg]",body).setAttribute("aria-pressed", true); });
     bindPanel(opts, ()=>w, (k, commit, rangeEnd) => { if(k==="layers") w.layers=+w.layers; if(k==="shape" && w.shape!=="custom"){ w.top=w.shape; w.bot=w.shape; } apply(); if(commit){ push(); if(!rangeEnd) render(); } });
     $(".fwg-on",body).onclick = e => { const b=e.target.closest("[data-tg]"); if(!b) return; w.on=!w.on; b.setAttribute("aria-pressed", w.on); apply(); push(); FW.sfx("soft"); };
     $$("[data-tab]",body).forEach(b=>b.onclick=()=>{ tab=b.dataset.tab; $$("[data-tab]",body).forEach(x=>x.setAttribute("aria-pressed",x===b)); render(); });

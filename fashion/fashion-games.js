@@ -308,7 +308,7 @@ const FGames = (() => {
         if(p.s==="skirt") return fcard(v.c2,"white",v.pat,40);
         if(p.s==="head") return CL[{bow:"bow",flowers:"flower",tiara:"crown",star:"star"}[v.head]];
         if(p.s==="belt") return `<svg viewBox="0 0 40 40"><rect x="2" y="16" width="36" height="8" rx="3" fill="${v.belt==="jewel"?"#D9AE4E":"#F2A7B8"}"/>${v.belt==="sash"?`<path d="M20 20C14 10 6 12 8 20 6 28 14 30 20 20z" fill="#F2A7B8"/>`:v.belt==="jewel"?`<path d="M20 13l5 7-5 7-5-7z" fill="#C9B6E8"/>`:v.belt==="flower"?CL.flower.replace("<svg",'<svg x="10" y="10" width="20" height="20"'):`<path d="M30 20c-4-6-8-4-6 0-2 4 2 6 6 0z" fill="#E86CA8"/>`}</svg>`;
-        if(p.s==="wings") return `<svg viewBox="40 60 280 150">${A.wings(Object.assign(A.BLANK_WINGS(),{on:true, shape:v.shape, c1:v.c1, c2:"white", flap:"none", size:.62}),{anim:false})}</svg>`;
+        if(p.s==="wings") return `<svg viewBox="-10 -10 380 390">${A.wings(Object.assign(A.BLANK_WINGS(),{on:true, shape:v.shape, c1:v.c1, c2:"white", flap:"none", size:.62}),{anim:false})}</svg>`;
       };
       const box = h(`<div class="fgx fgx-dress"><div class="fgx-card"><small>المطلوب</small><div>${A.dollHTML(tl,tw,{anim:false})}</div></div><div class="fgx-model" aria-label="إيلاف — اسحبي القطع هنا"><div class="fgx-mdl">${A.dollHTML(cur,cw,{anim:false})}</div></div><div class="fgx-tray2">${mix(pieces).map((p,i)=>`<button class="fgx-tok" data-i="${pieces.indexOf(p)}" aria-label="قطعة">${tokArt(p)}</button>`).join("")}</div></div>`);
       ctx.layer.appendChild(box);
@@ -561,7 +561,7 @@ const FGames = (() => {
     body.innerHTML = `<div class="fsr"><div class="fsr-glow" aria-hidden="true">${Array.from({length:18},(_,i)=>`<i style="left:${(i*41)%100}%;top:${(i*29)%90}%;--d:${(-i*.5).toFixed(1)}s"></i>`).join("")}</div>
       <p class="fsr-intro">غرفة صغيرة مخبّاية… الخيوط الذهبية الأربعة فتحت بابها. كل منصّة عليها قماش نادر، ويحرسه لغز صغير.</p>
       <div class="fsr-peds">${PEDS.map(p=>`<div class="fsr-ped ${FW.owned("f",p.id)?"done":""}" data-p="${p.id}">${FW.swatch("f",p.id,64)}<b>${p.n}</b><button class="btn ${FW.owned("f",p.id)?"ghost":"honey"} small" data-go="${p.id}">${FW.owned("f",p.id)?"✓ صار عندج":"حلّي اللغز"}</button></div>`).join("")}</div>
-      <div class="fsr-chest"><span class="fsr-cart">${S.chest?CL.gift:CL.gift}</span><div><b>صندوق الأجنحة النادرة</b><p>${S.chest?"فتحتيه! جناح الشفق والجناح الهندسي صاروا عندج.":"ينفتح لما تجمعين الأقمشة النادرة الثلاثة."}</p></div><button class="btn honey small" data-chest ${S.chest?"disabled":""}>افتحي</button></div>
+      <div class="fsr-chest"><span class="fsr-cart">${S.chest?CL.gift:CL.gift}</span><div><b>صندوق الأجنحة النادرة</b><p>${S.chest?"فتحتيه! جناح الشفق وجناح المجرّة صاروا عندج.":"ينفتح لما تجمعين الأقمشة النادرة الثلاثة."}</p></div><button class="btn honey small" data-chest ${S.chest?"disabled":""}>افتحي</button></div>
       <div class="fsr-play"></div></div>`;
     fillIcons(body);
     const play = $(".fsr-play",body);
@@ -588,7 +588,7 @@ const FGames = (() => {
     };
     $$("[data-go]",body).forEach(b=>b.onclick=()=>{ const p=PEDS.find(x=>x.id===b.dataset.go); if(FW.owned("f",p.id)){ FW.say(owl, "هذا القماش صار عندج من قبل."); return; } solve(p); });
     $("[data-chest]",body).onclick = () => { if(S.chest) return; if(!PEDS.every(p=>FW.owned("f",p.id))){ FW.sfx("nope"); FW.say(owl, "الصندوق يريد الأقمشة الثلاثة أول."); return; }
-      S.chest = true; FW.save(); FW.sfx("bell"); FW.grant("w","aurora","صندوق غرفة الأسرار"); setTimeout(()=>FW.grant("w","geo","صندوق غرفة الأسرار"), 1500); $("[data-chest]",body).disabled=true; $(".fsr-chest p",body).textContent="فتحتيه! جناح الشفق والجناح الهندسي صاروا عندج."; if(motionOK()) confetti(); };
+      S.chest = true; FW.save(); FW.sfx("bell"); FW.grant("w","aurora","صندوق غرفة الأسرار"); setTimeout(()=>FW.grant("w","galaxy","صندوق غرفة الأسرار"), 1500); $("[data-chest]",body).disabled=true; $(".fsr-chest p",body).textContent="فتحتيه! جناح الشفق وجناح المجرّة صاروا عندج."; if(motionOK()) confetti(); };
     if(first) setTimeout(()=>FW.say(owl, "هوو… وصلتي للمكان السري. ما كل أحد يلگاه!"), 500);
     return () => {};
   });

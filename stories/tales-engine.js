@@ -174,10 +174,12 @@ const TalesEngine = (() => {
   /* =====================================================================
      مشغّل الفصل
      ===================================================================== */
-  function viewPlayer(root, chapId, from){
-    const fc = findChap(chapId);
-    if(!fc || !chapUnlocked(chapId)){ go("tales", false); return; }
+  // ext: تشغيل منطقة خارجية (مثل غابة العالم) بنفس المحرك: {story, chap, exit, taken, take, onPickup, invHTML, itemArt}
+  function viewPlayer(root, chapId, from, ext){
+    const fc = ext ? {s:ext.story, c:ext.chap} : findChap(chapId);
+    if(!ext && (!fc || !chapUnlocked(chapId))){ go("tales", false); return; }
     const story = fc.s, chap = fc.c;
+    const leave = () => ext ? ext.exit() : go("tales");
     const ctx = { story, chap, flags:{}, inv:{}, choices:SV.choices, items:SV.items, SV, get:k=>SV.choices[chap.id+"."+k] ?? SV.choices[k], aborted:false };
     const v = h(`<section class="view tl tl-play tp-enter" style="--sky:${story.sky}">
       <div class="tp-stage">
@@ -272,7 +274,7 @@ const TalesEngine = (() => {
       (sc.plats||[]).forEach(p => { const el=h(`<div class="tpl k-${p.k||"wood"}" style="left:0;top:0;width:${p.w}em">${TART.plat(p.k||"wood", p.w)}</div>`); L.main.appendChild(el); plats.push({...p, el, cx:p.x, cy:p.y, px:p.x, py:p.y}); });
       (sc.hints||[]).forEach(([x,y]) => L.main.appendChild(h(`<i class="tp-hint" style="left:${x}em;top:${y}em"></i>`)));
       (sc.objs||[]).forEach(o => addObj(o));
-      (sc.items||[]).forEach((it,i) => { if(it.once && SV.items[it.once]) return; const el=h(`<div class="ti" style="left:${it.x}em;top:${it.y}em">${TART.symbol(HIKAYAT.itemArt[it.k]||"star", HIKAYAT.itemColor[it.k]||"#FFE7AE")}</div>`); L.main.appendChild(el); items.push({...it, el, got:false}); });
+      (sc.items||[]).forEach((it,i) => { if(it.once && (ext ? ext.taken(it.once) : SV.items[it.once])) return; if(it.when && !it.when(ctx)) return; const el=h(`<div class="ti" style="left:${it.x}em;top:${it.y}em">${ext&&ext.itemArt ? ext.itemArt(it.k) : TART.symbol(HIKAYAT.itemArt[it.k]||"star", HIKAYAT.itemColor[it.k]||"#FFE7AE")}</div>`); L.main.appendChild(el); items.push({...it, el, got:false}); });
       hazards=(sc.hazards||[]).map(z=>({...z, el:h(`<div class="tp-haz" style="left:${z.x}em;top:${z.y!=null?z.y:sc.ground}em">${TART.inkBlot()}</div>`)})); hazards.forEach(z=>L.main.appendChild(z.el));
       swirls.forEach(s => { s.el = h(`<div class="tp-swirl" style="left:${s.x}em;top:${sc.lanes[s.lane]}em">${TART.inkSwirl()}</div>`); L.main.appendChild(s.el); });
       if(sc.guide){ const g=sc.guide; guide={...g, el:h(`<div class="tp-guide" style="width:${g.w||6}em">${TART[g.a]?TART[g.a]():""}</div>`), x:g.x, y:g.y, idx:0}; L.main.appendChild(guide.el); placeGuide(); }
@@ -487,7 +489,7 @@ const TalesEngine = (() => {
         if(f.rig && m==="walk"){ if(mv>3) f.wasMoving=true; else if(f.wasMoving && mv<.5){ f.wasMoving=false; const el=chars.elaf; if(el && el!==f && Math.abs(el.x-f.x)<26){ f.face = el.x>=f.x?1:-1; TRig.greet(f); } } }
         placeChar(f); setAnim(f, m==="boat"?(mv>3?"row":"idle"):m==="fly"?"fly":(mv>24?"run":mv>2?"walk":"idle")); });
       // جمع
-      items.forEach(it => { if(!it.got && Math.abs(it.x-P.x)<4.5 && Math.abs((it.y)-(P.y-8))<12){ it.got=true; it.el.classList.add("got"); ctx.inv[it.k]=(ctx.inv[it.k]||0)+1; if(it.once){ SV.items[it.once]=true; } TAudio.sfx("pick"); drawInv(); if(it.say) bark(playerWho, it.say, 2000); setTimeout(()=>it.el.remove(), 700); } });
+      items.forEach(it => { if(!it.got && Math.abs(it.x-P.x)<4.5 && Math.abs((it.y)-(P.y-8))<12){ it.got=true; it.el.classList.add("got"); ctx.inv[it.k]=(ctx.inv[it.k]||0)+1; if(it.once){ if(ext) ext.take(it.once); else SV.items[it.once]=true; } if(ext && ext.onPickup) ext.onPickup(it); TAudio.sfx("pick"); drawInv(); if(it.say) bark(playerWho, it.say, 2000); setTimeout(()=>it.el.remove(), 700); } });
       // مناطق
       zones.forEach(z => { if(z.fired) return; if(P.x>=z.x0 && P.x<=z.x1){ if(z.bark){ z.fired=true; bark(z.bark[0], z.bark[1], 2800); return; } if(z.need && !z.need(ctx)){ if(!z.denied){ z.denied=true; runNonBlocking(z.deny||[]); setTimeout(()=>z.denied=false, 6000); } if(z.block){ P.x = z.x0-1; } return; } z.fired = z.once!==false; if(z.flag) ctx.flags[z.flag]=true; if(z.run){ interacting=true; keys.clear(); runBeats(z.run).then(()=>{ interacting=false; }); } } });
       // دليل يمشي قدّام
@@ -518,7 +520,7 @@ const TalesEngine = (() => {
       trail.push({x:P.x,y:P.y});
     }
     function respawn(){ TAudio.sfx("soft"); P.x=P.safe[0]; P.y=P.safe[1]; P.vy=0; P.ground=true; P.plat=null; P.c.x=P.x; P.c.y=P.y; followers.forEach((w,i)=>{ const f=chars[w]; if(f){ f.x=P.x-(8+i*8)*(P.c.face||1); f.y=P.y; placeChar(f);} }); buildTrail(); emote(P.c.who,"surprise"); toastIn(pick(HIKAYAT.respawnLines)); }
-    function drawInv(){ invEl.innerHTML = Object.entries(ctx.inv).filter(([k,n])=>n>0 && HIKAYAT.itemArt[k]).map(([k,n])=>`<span class="tp-ipill">${TART.symbol(HIKAYAT.itemArt[k], HIKAYAT.itemColor[k]||"#FFE7AE")}<b>${n}${curExplore&&curExplore.need&&curExplore.need[k]?"/"+curExplore.need[k]:""}</b></span>`).join(""); }
+    function drawInv(){ if(ext && ext.invHTML){ invEl.innerHTML = ext.invHTML(); return; } invEl.innerHTML = Object.entries(ctx.inv).filter(([k,n])=>n>0 && HIKAYAT.itemArt[k]).map(([k,n])=>`<span class="tp-ipill">${TART.symbol(HIKAYAT.itemArt[k], HIKAYAT.itemColor[k]||"#FFE7AE")}<b>${n}${curExplore&&curExplore.need&&curExplore.need[k]?"/"+curExplore.need[k]:""}</b></span>`).join(""); }
     function runNonBlocking(list){ list.forEach(b2 => { if(b2.say) bark(b2.say, b2.t, 2600); }); }
 
     /* ----- الألغاز والاختيارات ----- */
@@ -576,6 +578,15 @@ const TalesEngine = (() => {
       if(b.fx) return doFx(b.fx, b.arg);
       if(b.set){ Object.assign(ctx.flags, b.set); return; }
       if(b.follow){ followers = b.follow.filter(w=>chars[w]); return; }
+      if(b.goto){ // تنقّل بين أماكن المنطقة أثناء الاستكشاف
+        const was = mode==="explore", who = playerWho, ws = (ext&&ext.cast)||Object.keys(chars);
+        if(sc) await wipe();
+        const cast = {}; ws.forEach((w,i)=>{ cast[w] = [Math.max(2, b.at - i*7)]; });
+        loadScene({scene:b.goto, cast, player:who, follow:ws.filter(w=>w!==who)}); setTimeout(()=>v.classList.remove("wiping"), 500);
+        if(ext && ext.onScene) ext.onScene(b.goto, ctx);
+        if(was){ mode="explore"; startPlayer(); drawInv(); }
+        return;
+      }
       if(b.give){ SV.items[b.give]=true; save(); toastIn(b.giveText||"انضاف للحقيبة"); TAudio.sfx("sparkle"); return; }
       if(b.obj){ updObj(b.obj, b); return; }
       if(b.music){ music(b.music); return; }
@@ -595,11 +606,12 @@ const TalesEngine = (() => {
         if(ctx.aborted) return;
         const b = beats[i];
         $(".tp-progress i",v).style.width = (i/beats.length*100)+"%";
-        if(b.scene && i>0){ SV.cp[chap.id] = {i, flags:{...ctx.flags}, inv:{...ctx.inv}}; save(); }
+        if(b.scene && i>0 && !ext){ SV.cp[chap.id] = {i, flags:{...ctx.flags}, inv:{...ctx.inv}}; save(); }
         await runBeat(b);
       }
       if(ctx.aborted) return;
       $(".tp-progress i",v).style.width = "100%";
+      if(ext){ leave(); return; }
       SV.done[chap.id] = true; delete SV.cp[chap.id]; save();
       chapterEnd();
     }
@@ -628,8 +640,8 @@ const TalesEngine = (() => {
       v.appendChild(box);
       const close = () => { box.remove(); paused=false; v.classList.remove("paused"); last=performance.now(); };
       $("[data-resume]",box).onclick = close;
-      $("[data-restart]",box).onclick = () => { delete SV.cp[chap.id]; save(); go("tales:"+chap.id, false); };
-      $("[data-lib]",box).onclick = () => go("tales");
+      $("[data-restart]",box).onclick = () => { if(ext){ go(current,false); return; } delete SV.cp[chap.id]; save(); go("tales:"+chap.id, false); };
+      $("[data-lib]",box).onclick = leave;
       $("[data-motion]",box).onchange = e => { prefs.calm=e.target.checked; Store.set("prefs",prefs); document.documentElement.classList.toggle("calm", prefs.calm); if(!motionOK()) fxL.innerHTML=""; else if(sc&&sc.amb) ambient(sc.amb); };
       box._close = close;
     }
@@ -680,7 +692,7 @@ const TalesEngine = (() => {
       b.addEventListener("contextmenu", e => e.preventDefault());
     });
     $$(".tp-hud .tp-b",v).forEach(b => b.onclick = e => { e.stopPropagation(); TAudio.unlock(); const k=b.dataset.h;
-      if(k==="back") go("tales");
+      if(k==="back") leave();
       if(k==="pause") pauseMenu();
       if(k==="sound") soundMenu(b);
       if(k==="subs"){ SV.opts.subs=!SV.opts.subs; save(); b.setAttribute("aria-pressed", SV.opts.subs); toastIn(SV.opts.subs?"نص الحوار ظاهر":"الحوار بالفقاعات فقط", 1500); }
@@ -708,7 +720,8 @@ const TalesEngine = (() => {
     raf = requestAnimationFrame(frame);
 
     // ابدأ
-    const startIdx = from==="cp" && SV.cp[chapId] ? SV.cp[chapId].i : 0;
+    if(ext) v.classList.add("tp-hub");
+    const startIdx = !ext && from==="cp" && SV.cp[chapId] ? SV.cp[chapId].i : 0;
     runChapter(startIdx);
 
     return () => {
@@ -731,6 +744,7 @@ const TalesEngine = (() => {
     const clean = id ? viewPlayer(root, id, from) : viewLibrary(root);
     return () => { clean && clean(); setTimeout(()=>{ if(forestSound && !String(current).startsWith("tales")){ forestSound=false; Sound.set(true); } }, 0); };
   }
-  return { view, get save(){ return SV; } };
+  function playExt(root, ext){ init(); return viewPlayer(root, ext.chap.id, "", ext); }
+  return { view, playExt, get save(){ return SV; } };
 })();
 function viewTales(root, arg){ return TalesEngine.view(root, arg); }

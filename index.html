@@ -88,6 +88,7 @@ img{max-width:100%}
 .btn.danger{background:#C8705F;border-color:#8E4536;box-shadow:0 3px 0 #8E4536}
 .btn.small{min-height:40px;padding:4px 14px;font-size:.95rem}
 .btn[disabled]{opacity:.45;pointer-events:none}
+.btn.world-entry{background:linear-gradient(180deg,#9DBF8E,#5E9277);color:#FFFDF5;border-color:#3F6E58;box-shadow:0 3px 0 #3F6E58,0 0 18px rgba(157,191,142,.4)}
 .btn.tales-entry{background:linear-gradient(180deg,#5A4C9A,#2E2A5C);color:#FFE7AE;border-color:#1E1A3C;box-shadow:0 3px 0 #1E1A3C,0 0 18px rgba(246,200,106,.35)}
 .panel{background:var(--panel);border:2px solid var(--panel-edge);border-radius:var(--r-blob);box-shadow:var(--shadow)}
 
@@ -492,6 +493,7 @@ input[type=range]{width:100%;accent-color:var(--accent)}
 .moods small{font-size:.72rem}
 </style>
 <link rel="stylesheet" href="stories/tales.css">
+<link rel="stylesheet" href="world/world.css">
 </head>
 <body class="paper-tex">
 <div id="app">
@@ -515,6 +517,20 @@ input[type=range]{width:100%;accent-color:var(--accent)}
 <script src="stories/season1.js"></script>
 <script src="stories/tales-rig.js"></script>
 <script src="stories/tales-engine.js"></script>
+<!-- عالمنا: خريطة ومناطق (ملفات مستقلة بمجلد world) -->
+<script src="world/world-art.js"></script>
+<script src="world/world-core.js"></script>
+<script src="world/world-home.js"></script>
+<script src="world/world-forest.js"></script>
+<script src="world/world-garden.js"></script>
+<script src="world/world-museum.js"></script>
+<script src="world/world-kitchen.js"></script>
+<script src="world/world-sky.js"></script>
+<script src="world/world-river.js"></script>
+<script src="world/world-arcade.js"></script>
+<script src="world/world-festival.js"></script>
+<script src="world/world-beach.js"></script>
+<script src="world/world-post.js"></script>
 <script>
 /* =====================================================================
    إعدادات الموقع — غيّر هنا الاسم والرسائل والألوان وترتيب الألعاب.
@@ -614,6 +630,7 @@ document.documentElement.style.setProperty("--forest", `url("${FOREST}")`);
 
 /* ============ icons ============ */
 const IC = {
+  map:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6l6-2 6 2 6-2v14l-6 2-6-2-6 2z"/><path d="M9 4v14M15 6v14"/></svg>',
   book:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 5.5C6 4 9 4 12 6c3-2 6-2 9-.5V19c-3-1.5-6-1.5-9 .5-3-2-6-2-9-.5z"/><path d="M12 6v13.5"/></svg>',
   back:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5l7 7-7 7"/></svg>',
   star:'<svg viewBox="0 0 24 24"><path d="M12 2.8l2.7 5.6 6.1.8-4.4 4.3 1 6.1L12 16.8l-5.4 2.8 1-6.1-4.4-4.3 6.1-.8z" fill="#E8C066" stroke="#B88F33" stroke-width="1.4" stroke-linejoin="round"/></svg>',
@@ -717,6 +734,8 @@ const STICKERS = {
   sumo:{label:CONFIG.guestName, src:svgURL(ART.sumo("happy")), lock:"sumo"},
   hero:{label:CONFIG.heroName||"البطلة", src:GIRL, lock:"hero"}
 };
+// ملصقات تنفتح من «عالمنا»
+if((typeof World!=="undefined"&&World)) Object.entries(World.PAINT_STICKERS).forEach(([k,[label,art]]) => { STICKERS[k] = {label, src: art ? svgURL(art()) : "assets/ADOOL_OFFICIAL_CHARACTER.png", lock:k}; });
 const IMG = {};
 function loadImg(key, src){ if(IMG[key]) return IMG[key]; const im = new Image(); im.decoding="async"; im.src = src; IMG[key]=im; return im; }
 Object.entries(STICKERS).forEach(([k,v])=>loadImg("stk_"+k, v.src));
@@ -766,7 +785,7 @@ async function offerDownload(filename, data, fallbackShow){
 /* ============ stars, unlocks, progress ============ */
 const progress = Object.assign({stars:0, wins:{}, best:{}, secrets:[], seenUnlocks:0}, Store.get("progress", {}));
 function saveProgress(){ Store.set("progress", progress); }
-const isUnlocked = key => CONFIG.unlocks.some(u => u.value===key && progress.stars>=u.at);
+const isUnlocked = key => CONFIG.unlocks.some(u => u.value===key && progress.stars>=u.at) || !!((typeof World!=="undefined"&&World) && World.S.unlocks[key]);
 function addStars(n, why){
   const before = progress.stars; progress.stars += n; saveProgress(); renderStars(true);
   CONFIG.unlocks.forEach(u => { if(before<u.at && progress.stars>=u.at) setTimeout(()=>toast("انفتح: "+u.label, "lock"), 1200); });
@@ -816,14 +835,14 @@ function go(route, push=true){
   if(push){ try{ history.pushState({route},"", "#"+route); }catch(e){} }
   const view = $("#view"); view.innerHTML="";
   const [kind,id] = route.split(":");
-  $("#topbar").hidden = route==="intro" || kind==="tales";
+  $("#topbar").hidden = route==="intro" || kind==="tales" || kind==="world";
   $("#viewTitle").textContent = kind==="game" ? GAMES[id].title : (titles[kind]? titles[kind]() : settings.siteTitle);
-  const fn = {intro:viewIntro, map:viewMap, paint:viewPaint, diary:viewDiary, cave:viewCave, jokes:viewJokes, game:viewGame, tales:viewTales}[kind] || viewMap;
+  const fn = {intro:viewIntro, map:viewMap, paint:viewPaint, diary:viewDiary, cave:viewCave, jokes:viewJokes, game:viewGame, tales:viewTales, world:viewWorld}[kind] || viewMap;
   cleanup = fn(view, id) || null;
   view.focus && view.focus();
 }
 window.addEventListener("popstate", e => { const r = (e.state && e.state.route) || (location.hash.slice(1)||"intro"); go(r, false); });
-$("#backBtn").onclick = () => go(current==="map" ? "intro" : "map");
+$("#backBtn").onclick = () => { const r = window.__returnTo; if(r){ window.__returnTo = null; go(r); return; } go(current==="map" ? "intro" : "map"); };
 
 /* ============ shared bits ============ */
 function ambientLayer(n=8){
@@ -849,6 +868,7 @@ function viewIntro(root){
       <div class="row" style="justify-content:center;gap:10px;flex-wrap:wrap">
         <button class="btn honey" id="enterBtn" style="font-size:1.25rem;min-height:56px;padding:6px 30px">${esc(CONFIG.enterLabel)}</button>
         <button class="btn tales-entry" id="talesBtn" style="font-size:1.25rem;min-height:56px;padding:6px 26px">${IC.book||""}حكاياتنا</button>
+        <button class="btn world-entry" id="worldBtn" style="font-size:1.25rem;min-height:56px;padding:6px 26px">${IC.map||""}عالمنا</button>
       </div>
     </div>
     <div class="intro-cast">
@@ -862,6 +882,7 @@ function viewIntro(root){
   jm.onclick = () => { react(jm,"hop"); Sound.soft(); };
   girl.onclick = () => { react(girl,"jump"); Sound.soft(); };
   $("#talesBtn").onclick = () => { Sound.chime(); go("tales"); };
+  $("#worldBtn").onclick = () => { Sound.chime(); go("world"); };
   $("#enterBtn").onclick = () => {
     Sound.chime();
     const fin = () => { go("map"); if(!Store.get("toured", false)) setTimeout(tour, 350); };
@@ -915,7 +936,7 @@ function viewMap(root){
       ${ambientLayer(6)}
     </div></div>
     <div class="map-hint panel" id="mapHint">${esc(CONFIG.mapHint)}</div>
-    <div class="map-ui"><button class="btn ghost" id="allPlaces">${IC.list} كل الأماكن</button><button class="btn honey" id="mapSurprise">${IC.gift} فاجئيني</button><button class="btn tales-entry" id="mapTales">${IC.book||""} حكاياتنا</button></div>
+    <div class="map-ui"><button class="btn ghost" id="allPlaces">${IC.list} كل الأماكن</button><button class="btn honey" id="mapSurprise">${IC.gift} فاجئيني</button><button class="btn tales-entry" id="mapTales">${IC.book||""} حكاياتنا</button><button class="btn world-entry" id="mapWorld">${IC.map||""} عالمنا</button></div>
   </section>`);
   root.appendChild(v);
   const scene=$(".mapscene",v), scroll=$(".mapscroll",v), path=$(".map-path path",v), tok=$("#heroTok",v), jt=$("#jmTok",v);
@@ -941,6 +962,7 @@ function viewMap(root){
   }
   $$("[data-place]",v).forEach(b=>b.onclick=()=>openPlace(b.dataset.place));
   $("#mapTales",v).onclick = () => { Sound.soft(); go("tales"); };
+  $("#mapWorld",v).onclick = () => { Sound.soft(); go("world"); };
   // secrets
   $$("[data-secret]",v).forEach(b=>b.onclick=()=>{
     const s = SECRETS.find(x=>x.id===b.dataset.secret); if(progress.secrets.includes(s.id)) return;
@@ -1656,7 +1678,7 @@ function viewPaint(root){
   const saved = Store.get("paint", null);
   const st = { bg: saved?.bg || "paper", items: saved?.items || [] };
   let tool="pen", color="#3D3A2E", size=6, undo=[], redo=[], selected=-1, drawing=null, dragging=null;
-  const unlockedColors = CONFIG.unlocks.filter(u=>u.type==="color");
+  const unlockedColors = CONFIG.unlocks.filter(u=>u.type==="color").concat((typeof World!=="undefined"&&World) ? Object.entries(World.PAINT_COLORS).filter(([k])=>World.S.unlocks[k]).map(([k,[c,l]])=>({value:c, label:l, at:0})) : []);
   const v = h(`<section class="view"><div class="paint">
     <div class="tools panel" role="toolbar" aria-label="أدوات الرسم">
       <h4>الأداة</h4>
@@ -1672,7 +1694,7 @@ function viewPaint(root){
       <h4>السماكة: <span data-sz>6</span></h4>
       <input type="range" min="2" max="48" value="6" data-size aria-label="السماكة">
       <h4>الخلفية</h4>
-      <div class="seg" role="group"><button data-bg="paper">ورقة</button><button data-bg="sky">سماء</button><button data-bg="forest">غابة</button></div>
+      <div class="seg" role="group"><button data-bg="paper">ورقة</button><button data-bg="sky">سماء</button><button data-bg="forest">غابة</button><button data-bg="night">ليل</button><button data-bg="clouds">غيوم</button></div>
       <h4>ملصقات</h4>
       <div class="tool-row">${Object.entries(STICKERS).map(([k,s])=>`<button class="stk-btn ${s.lock && !isUnlocked(s.lock)?"locked":""}" data-stk="${k}" aria-label="ملصق ${esc(s.label)}" title="${s.lock && !isUnlocked(s.lock)?"يفتح بنجوم الصداقة":esc(s.label)}"><img src="${s.src}" alt=""></button>`).join("")}</div>
       <div class="tool-row" data-stk-ctl hidden><button class="btn ghost small" data-stk-del>${IC.trash} احذفي الملصق</button></div>
@@ -1684,12 +1706,15 @@ function viewPaint(root){
   </div></section>`);
   root.appendChild(v);
   const box=$(".canvas-box",v), bgc=$("[data-bgc]",v), dc=$("[data-dc]",v), bx=bgc.getContext("2d"), dx=dc.getContext("2d");
+  if((typeof WStudio!=="undefined"&&WStudio)) WStudio.attachPaint({v, st, canvases:[bgc, dc]});
   const forestImg = loadImg("forest", FOREST);
   let W=0,Hc=0,dpr=1;
   function sizeC(){ const r=box.getBoundingClientRect(); dpr=Math.min(2,window.devicePixelRatio||1); W=r.width; Hc=r.height; [bgc,dc].forEach(c=>{ c.width=Math.round(W*dpr); c.height=Math.round(Hc*dpr); }); bx.setTransform(dpr,0,0,dpr,0,0); dx.setTransform(dpr,0,0,dpr,0,0); renderAll(); }
   function paintBg(ctx,w,hh){
     ctx.clearRect(0,0,w,hh);
     if(st.bg==="paper"){ ctx.fillStyle="#FFFBEF"; ctx.fillRect(0,0,w,hh); ctx.strokeStyle="rgba(142,195,207,.35)"; ctx.lineWidth=1; for(let y=hh*.08;y<hh;y+=hh*.07){ ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(w,y); ctx.stroke(); } }
+    else if(st.bg==="night"){ const g=ctx.createLinearGradient(0,0,0,hh); g.addColorStop(0,"#1E1A3C"); g.addColorStop(1,"#4A3E7A"); ctx.fillStyle=g; ctx.fillRect(0,0,w,hh); const r=rnd(7); ctx.fillStyle="#FFF3C4"; for(let i=0;i<60;i++){ ctx.globalAlpha=.4+r()*.6; ctx.beginPath(); ctx.arc(r()*w, r()*hh*.8, .6+r()*1.6, 0, 7); ctx.fill(); } ctx.globalAlpha=1; ctx.beginPath(); ctx.arc(w*.8,hh*.2,Math.min(w,hh)*.07,0,7); ctx.fill(); }
+    else if(st.bg==="clouds"){ const g=ctx.createLinearGradient(0,0,0,hh); g.addColorStop(0,"#FBE3EF"); g.addColorStop(1,"#E4D8F4"); ctx.fillStyle=g; ctx.fillRect(0,0,w,hh); ctx.fillStyle="#FFFFFF"; const r=rnd(3); for(let i=0;i<7;i++){ const cx=r()*w, cy=hh*(.25+r()*.7), s=Math.min(w,hh)*(.05+r()*.06); ctx.globalAlpha=.85; [[0,0,1],[s*.9,-s*.3,.8],[s*1.7,0,.9],[-s*.9,s*.1,.7]].forEach(([dx,dy,k])=>{ ctx.beginPath(); ctx.arc(cx+dx,cy+dy,s*k,0,7); ctx.fill(); }); } ctx.globalAlpha=1; }
     else if(st.bg==="sky"){ const g=ctx.createLinearGradient(0,0,0,hh); g.addColorStop(0,"#CFE6F0"); g.addColorStop(.7,"#EEF4F2"); g.addColorStop(1,"#E5EFD3"); ctx.fillStyle=g; ctx.fillRect(0,0,w,hh); }
     else { ctx.fillStyle="#EEF3DA"; ctx.fillRect(0,0,w,hh); if(forestImg.complete && forestImg.naturalWidth){ const ir=forestImg.naturalWidth/forestImg.naturalHeight, cr=w/hh; let sw,sh2,sx,sy; if(ir>cr){ sh2=forestImg.naturalHeight; sw=sh2*cr; sx=(forestImg.naturalWidth-sw)/2; sy=0; } else { sw=forestImg.naturalWidth; sh2=sw/cr; sx=0; sy=(forestImg.naturalHeight-sh2)/2; } ctx.globalAlpha=.75; ctx.drawImage(forestImg,sx,sy,sw,sh2,0,0,w,hh); ctx.globalAlpha=1; } }
   }
@@ -1924,7 +1949,7 @@ $("#motionBtn").onclick=()=>{ if(sysReduce.matches){ toast("الحركة مخف�
 fillIcons(); applyTheme(); prefs.sound=false; syncToggles(); renderStars(false);
 if(!Store.ok) setTimeout(()=>toast("المتصفح ما يسمح بالحفظ — التقدّم يضيع عند الإغلاق","bulb"), 1200);
 const start = location.hash.slice(1);
-const valid = r => ["intro","map","paint","diary","cave","jokes"].includes(r) || r==="tales" || r.startsWith("tales:") || (r.startsWith("game:") && GAMES[r.split(":")[1]]);
+const valid = r => ["intro","map","paint","diary","cave","jokes"].includes(r) || r==="tales" || r.startsWith("tales:") || r==="world" || r.startsWith("world:") || (r.startsWith("game:") && GAMES[r.split(":")[1]]);
 go(valid(start)?start:"intro", false);
 try{ history.replaceState({route:current},"","#"+current); }catch(e){}
 </script>

@@ -301,6 +301,7 @@ const World = (() => {
         <div class="wm-birds" aria-hidden="true">${[0,1,2].map(i=>`<i style="top:${18+i*12}%;--d:${-i*7}s">${WART.butterfly(["#F3A9B8","#F2D27A","#8EC3CF"][i],"#B9A6DD")}</i>`).join("")}</div>
         ${Object.entries(REG).map(([id,r])=>{ const open=isOpen(id); return `<button class="wm-spot ${open?"":"locked"} ${S.visited[id]?"seen":""}" data-r="${id}" style="left:${r.x}%;top:${r.y}%;--w:${r.w}" aria-label="${r.n}${open?"":" — مقفولة"}">
           <span class="wm-art">${WART.land[id]()}</span><span class="wm-tag"><b>${r.n}</b><small>${open?r.sub:"مقفولة"}</small></span>${open?(S.visited[id]?"":`<i class="wm-new">جديد</i>`):`<i class="wm-lock">${IC.lock}</i>`}</button>`; }).join("")}
+        ${typeof FArt!=="undefined"?`<button class="wm-spot wm-fashion" data-fashion style="left:69%;top:9%;--w:10" aria-label="دار إيلاف"><span class="wm-art">${FArt.LM.atelier()}</span><span class="wm-tag"><b>دار إيلاف</b><small>عالم الأزياء</small></span></button>`:""}
         <div class="wm-cast" aria-hidden="false"></div>
       </div></div>
       <div class="wm-ui"><button class="wd-b" data-zin aria-label="تقريب">+</button><button class="wd-b" data-zout aria-label="تبعيد">−</button></div>
@@ -325,6 +326,7 @@ const World = (() => {
       castBox.style.transition = motionOK() ? "left .6s ease, top .6s ease" : "none"; castBox.style.left=(REG[id].x-6)+"%"; castBox.style.top=(REG[id].y+4)+"%";
       if(motionOK()){ body.classList.add("wm-zoom"); b.classList.add("pick"); setTimeout(()=>go("world:"+id), 620); } else go("world:"+id);
     });
+    const fz=$("[data-fashion]",body); if(fz) fz.onclick=()=>{ sfx("page"); window.__fashionFrom="world"; go("fashion"); };
     music("map");
     return () => cs.stop();
   }

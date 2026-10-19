@@ -6,6 +6,8 @@
   color:var(--t-ink);font-family:var(--font-b);overflow:hidden!important;background:var(--t-night)}
 .tl button{font:inherit;color:inherit}
 .tl [hidden]{display:none!important}
+/* التحديد والضغط المطوّل والتكبير المزدوج معطّلة لكل الموقع بـ index.html */
+.tl .tp-stage,.tl .tp-pad button{touch-action:none}
 .tl .btn{font-family:var(--font-d)}
 .tl-ib{display:inline-flex;align-items:center;gap:6px;min-width:44px;height:44px;padding:0 12px;border-radius:14px;border:1.5px solid rgba(246,200,106,.45);background:rgba(30,26,60,.55);color:var(--t-ink);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px)}
 .tl-ib svg{width:22px;height:22px}
@@ -60,9 +62,9 @@
 .tl-x.cloudfriend svg{width:54px;height:auto;animation:tlFloat 6s ease-in-out infinite}
 .tl-cast{position:relative;z-index:5;display:flex;align-items:flex-end;justify-content:center;gap:clamp(4px,2vw,22px);height:clamp(110px,24vh,230px);margin-bottom:max(8px,env(safe-area-inset-bottom))}
 .tl-c{height:100%;display:flex;align-items:flex-end;cursor:pointer;transform-origin:50% 100%;filter:drop-shadow(0 6px 10px rgba(0,0,0,.45))}
-.tl-c img{height:100%;width:auto;object-fit:contain;display:block}
-.tl-c.a{height:93%}
-.tl-c.e{animation:tlBob 3.6s ease-in-out infinite}.tl-c.a{animation:tlBob 3.2s ease-in-out infinite .6s}
+.tl-c>img{height:100%;width:auto;object-fit:contain;display:block}
+.tl-c .rig{height:100%;--h:1}
+.tl-c.a{height:108%}
 @keyframes tlBob{50%{transform:translateY(-4px)}}
 .tl-c.wave{animation:tlWave .5s ease-in-out 3}
 @keyframes tlWave{25%{transform:rotate(-5deg)}75%{transform:rotate(5deg)}}
@@ -244,7 +246,12 @@
 .tc-flip{position:absolute;bottom:0;left:0;transform:translateX(-50%);pointer-events:auto}
 .tc.fl .tc-flip{transform:translateX(-50%) scaleX(-1)}
 .tc-anim{transform-origin:50% 100%}
-.tc-anim img,.tc-anim svg{height:calc(var(--h)*1em);width:auto;max-width:none;display:block;object-fit:contain;filter:drop-shadow(0 .5em .6em rgba(0,0,0,.35));user-select:none;-webkit-user-drag:none}
+/* الشخصيات المحرّكة بأجزاء */
+.rig{position:relative;height:calc(var(--h)*1em);transform-origin:50% 100%;will-change:transform}
+.rig .rp{position:absolute;left:0;top:0;width:100%!important;height:100%!important;max-width:none;object-fit:contain;filter:none!important;will-change:transform;pointer-events:none;-webkit-backface-visibility:hidden;backface-visibility:hidden}
+.tc.rigged .tc-anim{filter:drop-shadow(0 .5em .6em rgba(0,0,0,.3))}
+.tc.rigged.a-idle .tc-anim,.tc.rigged.a-walk .tc-anim,.tc.rigged.a-run .tc-anim,.tc.rigged.a-fly .tc-anim,.tc.rigged.a-row .tc-anim,.tc.rigged.a-sit .tc-anim,.tc.rigged.a-jump .tc-anim{animation:none;transform:none}
+.tc-anim>img,.tc-anim>svg{height:calc(var(--h)*1em);width:auto;max-width:none;display:block;object-fit:contain;filter:drop-shadow(0 .5em .6em rgba(0,0,0,.35));user-select:none;-webkit-user-drag:none}
 .tc-shadow{position:absolute;left:0;top:0;width:calc(var(--h)*.5em);height:1.2em;transform:translate(-50%,-50%);border-radius:50%;background:rgba(0,0,0,.28);filter:blur(.2em)}
 .tc.fly .tc-shadow,.tc.boat .tc-shadow{display:none}
 .tc.a-idle .tc-anim{animation:tcIdle 3.4s ease-in-out infinite}
@@ -281,9 +288,9 @@
 .tc.boat .tc-boat{display:block;animation:tcRow 1.4s ease-in-out infinite}
 .tc.boat .tc-flip{bottom:-1em}
 .tc-refl{position:absolute;left:0;top:0;width:0;height:0;opacity:.32;z-index:1;pointer-events:none;filter:blur(.08em) saturate(.8)}
-.tc-refl img,.tc-refl svg{position:absolute;bottom:0;left:0;transform:translateX(-50%);height:calc(var(--h)*1em);width:auto;max-width:none}
-.tc-refl.fl img,.tc-refl.fl svg{transform:translateX(-50%) scaleX(-1)}
-.tc-refl.silly img,.tc-refl.silly svg{animation:tcWave .35s ease-in-out 4}
+.tc-refl>img,.tc-refl>svg,.tc-refl>.rig{position:absolute;bottom:0;left:0;transform:translateX(-50%);height:calc(var(--h)*1em);width:auto;max-width:none}
+.tc-refl.fl>img,.tc-refl.fl>svg,.tc-refl.fl>.rig{transform:translateX(-50%) scaleX(-1)}
+.tc-refl.silly>img,.tc-refl.silly>svg,.tc-refl.silly>.rig{animation:tcWave .35s ease-in-out 4}
 
 /* الواجهة فوق المشهد */
 .tp-hud{position:absolute;top:0;inset-inline:0;z-index:75;display:flex;align-items:center;gap:6px;padding:max(10px,env(safe-area-inset-top)) 12px 8px;pointer-events:none}

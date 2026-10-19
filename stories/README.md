@@ -11,6 +11,7 @@
 | `stories/tales-puzzles.js` | أنواع الألغاز (16 نوع) |
 | `stories/tales-audio.js` | الموسيقى الأصلية المولّدة، والمؤثرات، والأغاني اللي تضيفونها |
 | `stories/tales-art.js` | رسوم SVG للبيئات والأشياء |
+| `stories/tales-rig.js` | حركة أيلاف وعدول: أجزاء مقصوصة من صورتهم الأصلية (راس، شعر، يدين، رجلين، فستان) تتحرك كل وحدة حول مفصلها |
 | `stories/tales.css` | ألوان وأسلوب عالم القصص |
 | `assets/ADOOL_OFFICIAL_CHARACTER.png` | شخصية عدول (الملف الأصلي) |
 | `assets/JAMOUS_CUSTOM_FOREST_MASCOT.png` | شخصية جعموص (الملف الأصلي) |

@@ -433,7 +433,7 @@ const TalesEngine = (() => {
       if(o.done) o.el.classList.remove("act");
       interacting=false; last=performance.now();
     }
-    function goInteract(o){ if(Math.abs(o.x-P.x)<10 && Math.abs(o.y-P.y)<34) interact(o); else autoTarget = {x:o.x - Math.sign(o.x-P.x)*5, obj:o}; }
+    function goInteract(o){ if(Math.abs(o.x-P.x)<(o.r||9) && Math.abs(o.y-P.y)<(o.ry||34)) interact(o); else toastIn("قرّبي منه بأزرار الحركة أول", 1600); }
 
     function tryJump(){ if(sc.mode!=="walk") return; if(P.ground && !P.pre){ if(P.c.rig && motionOK()){ P.pre=.09; TRig.crouch(P.c,.1); } else launch(); } }
     function launch(){ P.pre=0; P.vy=-64; P.ground=false; P.plat=null; TAudio.sfx("jump"); setAnim(P.c,"jump"); }
@@ -442,7 +442,6 @@ const TalesEngine = (() => {
     function physics(dt){
       const c=P.c, m=sc.mode;
       let dir = (keys.has("right")?1:0) - (keys.has("left")?1:0);
-      if(autoTarget){ const dx=autoTarget.x-P.x; if(Math.abs(dx)<1.5){ const ao=autoTarget; autoTarget=null; if(ao.obj){ interact(ao.obj); return; } dir=0; } else { dir=Math.sign(dx); if(m==="walk" && P.ground){ const ahead=P.x+dir*4; if(surfaceAt(ahead, P.y)==null || (ao_hopNeeded(dir))){ const tgt=nextHop(dir, autoTarget.x); if(tgt){ autoHop(tgt); return; } } } } }
       if(dir) idleT=0; else idleT+=dt;
       P.hold = dir ? P.hold+dt : 0;
       const sp = m==="fly" ? 26 : m==="boat" ? 22 : (P.hold>.7 ? 33 : 19);
@@ -625,7 +624,7 @@ const TalesEngine = (() => {
       const box = h(`<div class="tp-pausebox" role="dialog" aria-modal="true"><div class="tp-card in"><h3>موقوفة مؤقتاً</h3>
         <div class="tp-col"><button class="btn honey" data-resume>كمّلي</button><button class="btn ghost" data-restart>إعادة الفصل</button>
         <label class="tl-sw"><input type="checkbox" data-motion ${prefs.calm?"checked":""}> خففي الحركة</label>
-        <button class="btn ghost" data-lib>رجوع للمكتبة</button></div><p class="d-note">${finePointer?"الحركة: الأسهم أو WASD · القفز: Space · التفاعل: E · الإيقاف: Esc":"الحركة: الأزرار تحت، أو اضغطي على مكان بالمشهد حتى تمشي له."}</p></div></div>`);
+        <button class="btn ghost" data-lib>رجوع للمكتبة</button></div><p class="d-note">${finePointer?"الحركة: الأسهم أو WASD · القفز: Space · التفاعل: E · الإيقاف: Esc":"الحركة: أزرار الاتجاهات تحت، والقفز والتفاعل بالأزرار اللي يمّها."}</p></div></div>`);
       v.appendChild(box);
       const close = () => { box.remove(); paused=false; v.classList.remove("paused"); last=performance.now(); };
       $("[data-resume]",box).onclick = close;
@@ -659,10 +658,11 @@ const TalesEngine = (() => {
       } else if(e.type==="keydown" && (e.code==="Space"||e.code==="Enter"||e.code==="ArrowLeft"||e.code==="KeyE") && advanceFn && !over.contains(document.activeElement)){ e.preventDefault(); advanceFn(); }
     };
     window.addEventListener("keydown", onKey); window.addEventListener("keyup", onKey);
+    const releaseAll = () => { keys.clear(); $$(".tp-pad button.on",v).forEach(x=>x.classList.remove("on")); };
+    window.addEventListener("blur", releaseAll); document.addEventListener("visibilitychange", releaseAll);
     stage.addEventListener("click", e => {
       TAudio.unlock();
       if(advanceFn && (mode==="talk"||mode==="cine")) { advanceFn(); return; }
-      if(mode==="explore" && !interacting && P){ const r=stage.getBoundingClientRect(); const wx = (e.clientX - r.left)/U + cam; autoTarget = {x:clamp(wx,2,sc.len-2)}; }
     });
     dlg.addEventListener("click", () => advanceFn && advanceFn());
     narr.addEventListener("click", e => { if(e.target.closest(".tl-btn")) return; advanceFn && advanceFn(); });
@@ -675,7 +675,9 @@ const TalesEngine = (() => {
         else if(k==="down"){ if(sc.mode==="boat") P.lane=Math.min(sc.lanes.length-1,P.lane+1); keys.add("down"); }
         else keys.add(k); b.classList.add("on"); };
       const up = e => { keys.delete(k); b.classList.remove("on"); };
-      b.addEventListener("pointerdown", down); b.addEventListener("pointerup", up); b.addEventListener("pointercancel", up); b.addEventListener("pointerleave", up);
+      b.addEventListener("pointerdown", e => { try{ b.setPointerCapture(e.pointerId); }catch(_){} down(e); });
+      ["pointerup","pointercancel","lostpointercapture"].forEach(t => b.addEventListener(t, up));
+      b.addEventListener("contextmenu", e => e.preventDefault());
     });
     $$(".tp-hud .tp-b",v).forEach(b => b.onclick = e => { e.stopPropagation(); TAudio.unlock(); const k=b.dataset.h;
       if(k==="back") go("tales");
@@ -712,6 +714,7 @@ const TalesEngine = (() => {
     return () => {
       ctx.aborted = true; cancelAnimationFrame(raf); ro.disconnect();
       window.removeEventListener("keydown", onKey); window.removeEventListener("keyup", onKey);
+      window.removeEventListener("blur", releaseAll); document.removeEventListener("visibilitychange", releaseAll);
       if(skipFn) try{ skipFn(); }catch(e){}
       TAudio.stop();
     };

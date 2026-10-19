@@ -23,8 +23,8 @@ const TalesEngine = (() => {
   /* ---------- الأسماء والشخصيات ---------- */
   const NAMES = { elaf:()=>heroName(), adool:()=>HIKAYAT.names.adool, jm:()=>CONFIG.companionName, sumo:()=>CONFIG.guestName, narr:()=>"الراوي" };
   const CHARS = {
-    elaf: {h:28, flip:true,  color:"#F3B6AE", html:()=>`<img src="${GIRL}" alt="" draggable="false">`},
-    adool:{h:26, flip:true,  color:"#B8D69C", html:()=>`<img src="${ADOOL_SRC}" alt="" draggable="false" decoding="async">`},
+    elaf: {h:28, flip:true,  color:"#F3B6AE", html:()=>TRig.html("elaf")},
+    adool:{h:31, flip:true,  color:"#B8D69C", html:()=>TRig.html("adool")},
     jm:   {h:13, flip:false, color:"#7FC2A0", html:()=>`<img src="${JM_SRC}" alt="" draggable="false" decoding="async">`},
     sumo: {h:14, flip:false, color:"#E7B2C6", html:()=>ART.sumo("idle")}
   };
@@ -70,7 +70,7 @@ const TalesEngine = (() => {
         ${SV.pages.length ? `<button class="tl-x" data-pages>${TART.symbol("page","#FBF6E8")}<span>صفحاتنا (${SV.pages.length})</span></button>` : ""}
         ${SV.done.s4c3 ? `<span class="tl-x cloudfriend" title="الغيمة الصغيرة رجعت تزوركم">${TART.littleCloud("happy")}</span>` : ""}
       </div>
-      <div class="tl-cast"><div class="tl-c e">${CHARS.elaf.html()}</div><div class="tl-c a">${CHARS.adool.html()}</div></div>
+      <div class="tl-cast"><div class="tl-c e" data-w="elaf">${CHARS.elaf.html()}</div><div class="tl-c a" data-w="adool">${CHARS.adool.html()}</div></div>
       ${!opened && motionOK() ? `<div class="tl-opener" aria-hidden="true"><div class="tl-ob"><div class="tl-op back"></div>${[0,1,2].map(i=>`<div class="tl-op page p${i}"></div>`).join("")}<div class="tl-op cover"><b>حكاياتنا</b></div></div></div>` : ""}
     </section>`);
     root.appendChild(v);
@@ -87,9 +87,13 @@ const TalesEngine = (() => {
     const bl=$("[data-blank]",v); if(bl) bl.onclick = () => { const md=modal(`<h3>كتاب جديد فارغ</h3><p>هذا الكتاب ينتظر حكايات جاية. سمّيه:</p><input class="tl-input" maxlength="40" value="${esc(SV.blankTitle)}" placeholder="حكاية جاية…"><div class="row"><button class="btn" data-ok>احفظي العنوان</button></div>`); $("[data-ok]",md.el).onclick=()=>{ SV.blankTitle=$(".tl-input",md.el).value.trim(); save(); md.close(); go("tales",false); }; };
     const mm=$("[data-memory]",v); if(mm) mm.onclick = () => modal(`<h3>ساعة البيت الصغيرة</h3><p style="font-size:1.15rem">«${esc(SV.memory)}»</p><p class="d-note">انحفظت من حكاية «قطار الساعة اللي نسى الوقت». تتغير إذا عدتي الفصل الثالث.</p>`);
     const pg=$("[data-pages]",v); if(pg) pg.onclick = () => openPages();
-    const cast=$(".tl-cast",v); cast.onclick = e => { const c=e.target.closest(".tl-c"); if(c){ c.classList.remove("wave"); void c.offsetWidth; c.classList.add("wave"); TAudio.unlock(); TAudio.sfx("soft"); } };
+    const cast=$(".tl-cast",v); const cc = {};
+    $$(".tl-c",v).forEach(el => { const c={who:el.dataset.w, x:0, y:0, face:1, anim:"idle"}; TRig.attach(c, el); cc[c.who]=c; });
+    cast.onclick = e => { const el=e.target.closest(".tl-c"); if(el){ const c=cc[el.dataset.w]; TRig.wave(c, 1.4); TAudio.unlock(); TAudio.sfx("soft"); } };
+    let lraf=0, lt=performance.now(); const loop = now => { const dt=Math.min(.05,(now-lt)/1000); lt=now; Object.values(cc).forEach(c=>TRig.update(c, dt, !motionOK())); lraf=requestAnimationFrame(loop); }; lraf=requestAnimationFrame(loop);
+    setTimeout(()=>{ if(cc.adool) TRig.greet(cc.adool); }, 1600);
     TAudio.stop();
-    return () => {};
+    return () => cancelAnimationFrame(lraf);
   }
 
   function openPages(){
@@ -225,12 +229,13 @@ const TalesEngine = (() => {
       const el = h(`<div class="tc tc-${who}" style="--h:${C.h}"><div class="tc-shadow"></div><div class="tc-flip"><div class="tc-anim">${C.html()}</div></div><div class="tc-boat">${TART.paperBoat(who==="elaf"?"#FBE3E0":who==="adool"?"#E6F2DA":"#FBF6E8")}</div><div class="tc-mark">!</div><div class="tc-bub" hidden></div></div>`);
       L.main.appendChild(el);
       const c = {who, el, x:0, y:86, face:1, vis:true, anim:"idle", h:C.h};
+      if(TRig.has(who)){ TRig.attach(c, el); el.classList.add("rigged"); }
       el.addEventListener("click", e => { if(mode==="explore" && who!==playerWho){ e.stopPropagation(); emote(who, "happy"); TAudio.sfx("soft"); bark(who, pick(HIKAYAT.barks[who]||["هلا!"]), 1800); } });
       chars[who]=c; return c;
     }
     function placeChar(c){ c.el.style.transform = `translate(${c.x}em, ${c.y}em)`; c.el.classList.toggle("fl", CHARS[c.who].flip && c.face<0); }
     function setAnim(c, a){ if(c.anim===a) return; c.el.classList.remove("a-"+c.anim); c.anim=a; c.el.classList.add("a-"+a); }
-    function emote(who, e, ms=1300){ const c=chars[who]; if(!c) return; c.el.classList.remove("e-"+e); void c.el.offsetWidth; c.el.classList.add("e-"+e); setTimeout(()=>c.el.classList.remove("e-"+e), ms); }
+    function emote(who, e, ms=1300){ const c=chars[who]; if(!c) return; if(c.rig && e==="wave"){ TRig.wave(c, ms/1000); return; } c.el.classList.remove("e-"+e); void c.el.offsetWidth; c.el.classList.add("e-"+e); setTimeout(()=>c.el.classList.remove("e-"+e), ms); }
     function bark(who, text, ms=2400){ const c=chars[who]; if(!c||!c.vis) return; const b=$(".tc-bub",c.el); b.textContent=fill(text,ctx); b.hidden=false; clearTimeout(b._t); b._t=setTimeout(()=>{ b.hidden=true; }, ms); }
 
     /* ----- بناء المشهد ----- */
@@ -356,7 +361,7 @@ const TalesEngine = (() => {
         requestAnimationFrame(step);
       });
     }
-    function hopChar(c, x, y, dur=520){ return new Promise(r => { const x0=c.x, y0=c.y, t0=performance.now(); c.face = x>=x0?1:-1; setAnim(c,"jump"); TAudio.sfx("jump"); const step = now => { const t=Math.max(0,Math.min(1,(now-t0)/dur)); c.x=lerp(x0,x,t); c.y=lerp(y0,y,t)-Math.sin(t*Math.PI)*10; placeChar(c); if(t<1) requestAnimationFrame(step); else { setAnim(c,"idle"); TAudio.sfx("land"); r(); } }; requestAnimationFrame(step); }); }
+    function hopChar(c, x, y, dur=520){ return new Promise(r0 => { if(c.rig){ TRig.crouch(c,.12); setTimeout(()=>go2(), motionOK()?110:0); } else go2(); function go2(){ new Promise(r => { const x0=c.x, y0=c.y, t0=performance.now(); c.face = x>=x0?1:-1; setAnim(c,"jump"); TAudio.sfx("jump"); const step = now => { const t=Math.max(0,Math.min(1,(now-t0)/dur)); c.x=lerp(x0,x,t); c.y=lerp(y0,y,t)-Math.sin(t*Math.PI)*10; placeChar(c); if(t<1) requestAnimationFrame(step); else { setAnim(c,"idle"); TAudio.sfx("land"); r(); } }; requestAnimationFrame(step); }).then(r0); } }); }
     function moveGuide(path, dur){ return new Promise(r => { if(!guide) return r(); const pts=[[guide.x,guide.y],...path]; const t0=performance.now(); const seg=pts.length-1; const step=now=>{ const t=Math.max(0,Math.min(1,(now-t0)/dur)), f=t*seg, i=Math.min(seg-1,Math.floor(f)), k=f-i; guide.x=lerp(pts[i][0],pts[i+1][0],k); guide.y=lerp(pts[i][1],pts[i+1][1],k)+Math.sin(now/200)*.6; placeGuide(); if(t<1) requestAnimationFrame(step); else r(); }; requestAnimationFrame(step); }); }
     async function act(b){
       mode = mode==="explore" ? "explore" : "busy";
@@ -430,7 +435,8 @@ const TalesEngine = (() => {
     }
     function goInteract(o){ if(Math.abs(o.x-P.x)<10 && Math.abs(o.y-P.y)<34) interact(o); else autoTarget = {x:o.x - Math.sign(o.x-P.x)*5, obj:o}; }
 
-    function tryJump(){ if(sc.mode!=="walk") return; if(P.ground){ P.vy=-64; P.ground=false; P.plat=null; TAudio.sfx("jump"); setAnim(P.c,"jump"); } }
+    function tryJump(){ if(sc.mode!=="walk") return; if(P.ground && !P.pre){ if(P.c.rig && motionOK()){ P.pre=.09; TRig.crouch(P.c,.1); } else launch(); } }
+    function launch(){ P.pre=0; P.vy=-64; P.ground=false; P.plat=null; TAudio.sfx("jump"); setAnim(P.c,"jump"); }
     function onAction(){ if(mode!=="explore"||interacting) return; if(near) interact(near); }
 
     function physics(dt){
@@ -445,6 +451,7 @@ const TalesEngine = (() => {
       // ريح
       if(sc.wind){ const w=sc.wind; gustT+=dt; const ph=gustT%w.every; const warn = ph>w.every-1.3 && ph<w.every; const on = ph < w.dur; if(warn!==gustWarn){ gustWarn=warn; v.classList.toggle("gust-warn", warn); if(warn) TAudio.sfx("wind"); } if(on!==gustOn){ gustOn=on; v.classList.toggle("gusting", on); } if(on && !(w.shelters||[]).some(([a,b])=>P.x>=a&&P.x<=b)) P.vx -= w.push; }
       if(m==="walk"){
+        if(P.pre>0){ P.pre-=dt; if(P.pre<=0) launch(); }
         P.vy += 170*dt; if(P.vy>110) P.vy=110;
         const px=P.x, py=P.y;
         P.x = clamp(P.x + P.vx*dt, 2, sc.len-2);
@@ -477,7 +484,9 @@ const TalesEngine = (() => {
       const lt=trail[trail.length-1]; if(Math.hypot(P.x-lt.x, P.y-lt.y)>.9){ trail.push({x:P.x,y:P.y}); if(trail.length>160) trail.shift(); if(m==="walk"&&P.ground&&Math.random()<.18) TAudio.sfx("step"); }
       let need=0, acc=0, ti=trail.length-1;
       followers.forEach((w,i) => { const f=chars[w]; if(!f) return; need += i===0 ? (P.c.h*.36 + f.h*.36 + 2) : (chars[followers[i-1]] ? chars[followers[i-1]].h*.36 : 6) + f.h*.36 + 2;
-        while(ti>0 && acc<need){ acc += Math.hypot(trail[ti].x-trail[ti-1].x, trail[ti].y-trail[ti-1].y); ti--; } const tp=trail[ti]; const nx=lerp(f.x,tp.x,Math.min(1,dt*7)), ny=lerp(f.y,tp.y,Math.min(1,dt*9)); const mv=Math.abs(nx-f.x)/dt; f.face = nx>f.x+.01?1:nx<f.x-.01?-1:f.face; f.x=nx; f.y=ny; placeChar(f); setAnim(f, m==="boat"?(mv>3?"row":"idle"):m==="fly"?"fly":(mv>24?"run":mv>2?"walk":"idle")); });
+        while(ti>0 && acc<need){ acc += Math.hypot(trail[ti].x-trail[ti-1].x, trail[ti].y-trail[ti-1].y); ti--; } const tp=trail[ti]; const nx=lerp(f.x,tp.x,Math.min(1,dt*7)), ny=lerp(f.y,tp.y,Math.min(1,dt*9)); const mv=Math.abs(nx-f.x)/dt; f.face = nx>f.x+.01?1:nx<f.x-.01?-1:f.face; f.x=nx; f.y=ny;
+        if(f.rig && m==="walk"){ if(mv>3) f.wasMoving=true; else if(f.wasMoving && mv<.5){ f.wasMoving=false; const el=chars.elaf; if(el && el!==f && Math.abs(el.x-f.x)<26){ f.face = el.x>=f.x?1:-1; TRig.greet(f); } } }
+        placeChar(f); setAnim(f, m==="boat"?(mv>3?"row":"idle"):m==="fly"?"fly":(mv>24?"run":mv>2?"walk":"idle")); });
       // جمع
       items.forEach(it => { if(!it.got && Math.abs(it.x-P.x)<4.5 && Math.abs((it.y)-(P.y-8))<12){ it.got=true; it.el.classList.add("got"); ctx.inv[it.k]=(ctx.inv[it.k]||0)+1; if(it.once){ SV.items[it.once]=true; } TAudio.sfx("pick"); drawInv(); if(it.say) bark(playerWho, it.say, 2000); setTimeout(()=>it.el.remove(), 700); } });
       // مناطق
@@ -691,6 +700,7 @@ const TalesEngine = (() => {
       if(camTween) camTween(now);
       else if(sc && mode!=="cine" && !camHold && (P && mode==="explore" ? true : chars[playerWho])){ const fx0 = mode==="explore"&&P ? P.x : chars[playerWho].x; const target = clamp(fx0 - VW*.42, 0, Math.max(0, sc.len-VW)); cam = motionOK() ? lerp(cam, target, Math.min(1, dt*3.2)) : target; }
       if(sc) render();
+      const calm = !motionOK(); for(const k in chars){ const c=chars[k]; if(c.rig && c.vis) TRig.update(c, dt, calm); }
       reflections.forEach(r => { const c=r.c; r.hist.push([c.x,c.y,c.face]); if(r.hist.length>18) r.hist.shift(); const [x,y,f]=r.hist[0]; r.el.style.transform=`translate(${x}em, ${sc.reflect + (sc.reflect-y)}em) scaleY(-1)`; r.el.classList.toggle("fl", CHARS[c.who].flip && f<0); r.el.hidden=!c.vis; if(motionOK() && Math.random()<dt*.12){ r.el.classList.add("silly"); setTimeout(()=>r.el.classList.remove("silly"), 1400); } });
     }
     raf = requestAnimationFrame(frame);
@@ -711,8 +721,19 @@ const TalesEngine = (() => {
 
   /* ---------- نقطة الدخول من الراوتر ---------- */
   let forestSound = false;
+  let guarded=false;
+  function guardTouch(){
+    if(guarded) return; guarded=true;
+    // داخل الحكايات فقط: نمنع تكبير الضغط المزدوج وقائمة الضغط المطوّل، ونخلي خانات الكتابة طبيعية
+    const inTales = t => t && t.closest && t.closest(".tl") && !t.closest("input,textarea,select,[contenteditable]");
+    let lastEnd=0;
+    document.addEventListener("touchend", e => { if(!inTales(e.target) || e.target.closest(".tp-stage,.tp-pad")) return; const now=Date.now(); if(now-lastEnd<330 && e.cancelable){ e.preventDefault(); const b=e.target.closest("button"); if(b) b.click(); } lastEnd=now; }, {passive:false});
+    document.addEventListener("dblclick", e => { if(inTales(e.target)) e.preventDefault(); });
+    document.addEventListener("contextmenu", e => { if(inTales(e.target)) e.preventDefault(); });
+    document.addEventListener("selectstart", e => { if(inTales(e.target)) e.preventDefault(); });
+  }
   function view(root, arg){
-    init();
+    init(); guardTouch();
     if(prefs.sound){ forestSound=true; Sound.set(false); }
     const [id, from] = (arg||"").split("@");
     const clean = id ? viewPlayer(root, id, from) : viewLibrary(root);

@@ -47,6 +47,12 @@ html{scroll-padding-top:env(safe-area-inset-top,0px);height:100%}
 body{margin:0;height:100%;background:var(--paper);color:var(--ink);font-family:var(--font-b);font-size:16px;line-height:1.7;-webkit-tap-highlight-color:transparent;overflow:hidden}
 button,input,textarea,select{font:inherit;color:inherit}
 button{cursor:pointer}
+/* بكل الموقع: بدون تحديد نص أو قائمة ضغط مطوّل أو تكبير بالضغط المزدوج.
+   خانات الكتابة تبقى طبيعية. */
+html,body,body *{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;-webkit-tap-highlight-color:transparent}
+html,body,button,a,[role=button]{touch-action:manipulation}
+img{-webkit-user-drag:none}
+input,textarea,select,[contenteditable],[contenteditable] *{-webkit-user-select:text;user-select:text;-webkit-touch-callout:default}
 img{max-width:100%}
 :focus-visible{outline:3px solid var(--honey);outline-offset:3px;border-radius:10px}
 .sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
@@ -1904,6 +1910,15 @@ $("#settingsBtn").onclick = () => {
 function syncToggles(){ $("#soundBtn").setAttribute("aria-pressed", prefs.sound); $("#motionBtn").setAttribute("aria-pressed", prefs.calm || sysReduce.matches); document.documentElement.classList.toggle("calm", prefs.calm); }
 $("#soundBtn").onclick=()=>{ Sound.set(!prefs.sound); syncToggles(); toast(prefs.sound?"أصوات الغابة شغّالة":"الأصوات مكتومة","sound"); };
 $("#motionBtn").onclick=()=>{ if(sysReduce.matches){ toast("الحركة مخفّضة من إعدادات جهازج","calm"); return; } prefs.calm=!prefs.calm; Store.set("prefs",prefs); syncToggles(); toast(prefs.calm?"وقّفنا الحركة":"رجعت الحركة","calm"); go(current,false); };
+// منع تكبير الضغط المزدوج وقائمة الضغط المطوّل بكل الموقع (عدا خانات الكتابة)
+(() => {
+  const free = t => !t || !t.closest || t.closest("input,textarea,select,[contenteditable]");
+  let lastEnd = 0;
+  document.addEventListener("touchend", e => { if(free(e.target) || e.target.closest(".tp-stage,.tp-pad,canvas,.stage")) { lastEnd = Date.now(); return; } const now = Date.now(); if(now - lastEnd < 330 && e.cancelable){ e.preventDefault(); const b = e.target.closest("button,[role=button],a"); if(b) b.click(); } lastEnd = now; }, {passive:false});
+  document.addEventListener("dblclick", e => { if(!free(e.target)) e.preventDefault(); });
+  document.addEventListener("contextmenu", e => { if(!free(e.target)) e.preventDefault(); });
+  document.addEventListener("selectstart", e => { if(!free(e.target)) e.preventDefault(); });
+})();
 fillIcons(); applyTheme(); prefs.sound=false; syncToggles(); renderStars(false);
 if(!Store.ok) setTimeout(()=>toast("المتصفح ما يسمح بالحفظ — التقدّم يضيع عند الإغلاق","bulb"), 1200);
 const start = location.hash.slice(1);

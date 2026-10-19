@@ -721,19 +721,8 @@ const TalesEngine = (() => {
 
   /* ---------- نقطة الدخول من الراوتر ---------- */
   let forestSound = false;
-  let guarded=false;
-  function guardTouch(){
-    if(guarded) return; guarded=true;
-    // داخل الحكايات فقط: نمنع تكبير الضغط المزدوج وقائمة الضغط المطوّل، ونخلي خانات الكتابة طبيعية
-    const inTales = t => t && t.closest && t.closest(".tl") && !t.closest("input,textarea,select,[contenteditable]");
-    let lastEnd=0;
-    document.addEventListener("touchend", e => { if(!inTales(e.target) || e.target.closest(".tp-stage,.tp-pad")) return; const now=Date.now(); if(now-lastEnd<330 && e.cancelable){ e.preventDefault(); const b=e.target.closest("button"); if(b) b.click(); } lastEnd=now; }, {passive:false});
-    document.addEventListener("dblclick", e => { if(inTales(e.target)) e.preventDefault(); });
-    document.addEventListener("contextmenu", e => { if(inTales(e.target)) e.preventDefault(); });
-    document.addEventListener("selectstart", e => { if(inTales(e.target)) e.preventDefault(); });
-  }
   function view(root, arg){
-    init(); guardTouch();
+    init();
     if(prefs.sound){ forestSound=true; Sound.set(false); }
     const [id, from] = (arg||"").split("@");
     const clean = id ? viewPlayer(root, id, from) : viewLibrary(root);
